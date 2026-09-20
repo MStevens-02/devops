@@ -1,0 +1,23 @@
+name: Building and Running in Docker Workflow
+on: push
+
+jobs:
+  build:
+    name: Building our Application
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+      - name: Build with Maven
+        run: mvn --batch-mode clean package
+      - name: Build Docker Image
+        run: docker build -t devopsimage .
+      - name: Run image
+        run: docker run --name devopscontainer -d devopsimage
+      - name: view logs
+        run: docker logs devopscontainer
