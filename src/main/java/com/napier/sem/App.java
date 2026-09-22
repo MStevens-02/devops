@@ -27,6 +27,9 @@ public class App {
         }
         // Disconnect from database
 
+        System.out.println("HelloWorld");
+
+
         con.disconnect();
     }
 }
