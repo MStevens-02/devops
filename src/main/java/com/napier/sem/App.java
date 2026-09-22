@@ -27,6 +27,10 @@ public class App {
         }
         // Disconnect from database
 
+
+
+
+        System.out.println("Bob");
         con.disconnect();
     }
 }
