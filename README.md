@@ -26,7 +26,7 @@ The application is built using Java and Maven, utilizes a MySQL database for dat
 
 ## Team Members
 - [Michael Stevens] 
-- [Blinova Karyna] 
+- [Karyna Blinova] 
 - [Rostyk Korolov]
 - [Stefan Borisov] 
 - [Callum Crozier] 
