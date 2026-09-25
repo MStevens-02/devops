@@ -1,0 +1,23 @@
+name: Building and Running in Docker Workflow
+
+on: push
+
+jobs:
+  build:
+    name: Building our Application
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build with Maven
+        run: mvn clean package
+
+      - name: Run docker compose
+        run: docker compose up --build --abort-on-container-exit
