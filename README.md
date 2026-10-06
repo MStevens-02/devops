@@ -16,6 +16,11 @@ The application is built using Java and Maven, utilizes a MySQL database for dat
 - Provides urban vs. non-urban population percentages.
 - Tracks specific language usage statistics worldwide.
 
+## Use Case Diagram
+The diagram below shows the six use cases (UC1–UC6), grouped by report type. Full descriptions are in the [`use-cases`](use-cases/) folder.
+
+![Use Case Diagram](use-cases/use-case-diagram.drawio.svg)
+
 ## Technologies Used
 - **Language:** Java 17
 - **Build Tool:** Maven
