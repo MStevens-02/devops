@@ -17,7 +17,7 @@ public class City {
     // Create a set method to valitate id
     public void setId(long id) {
         if (id < 0) {
-            throw new IllegalArgumentException("City id must be positive. ", id);
+            throw new IllegalArgumentException("City id must be positive. " + id);
         }
         this.id = id;
     }
