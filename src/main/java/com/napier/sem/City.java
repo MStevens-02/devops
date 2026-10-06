@@ -1,4 +1,4 @@
-package com.sample;
+package com.sample.sem;
 
 // Create a public class called city to store the methods
 public class City {
