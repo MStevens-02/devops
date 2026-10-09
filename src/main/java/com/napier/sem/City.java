@@ -35,7 +35,7 @@ public class City {
         this.name = name;
     }
 
-    // Create a get CountryCode method to validate it
+    // Create a get CountryCode method to return CountryCode
     public String getCountryCode() {
         if (countryCode == null || countryCode.trim().isEmpty()){
             System.out.println("Country Code must not be Null or blank. ");
