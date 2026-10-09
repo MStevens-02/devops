@@ -5,6 +5,7 @@ public class City {
     private long id;
     private String name;
     private String countryCode;
+    private String countryName;
     private String district;
     private long population;
 
@@ -51,6 +52,19 @@ public class City {
         this.countryCode = countryCode.trim();
     }
 
+    // Create a get method to return country name
+    public String getCountryName() {
+        return countryName;
+    }
+
+    // Create a set method to validate country name
+    public void setCountryName(String countryName) {
+        if (countryName == null || countryName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Country name must not be null or blank");
+        }
+        this.countryName = countryName.trim();
+    }
+
     // Create a get district method to return district
     public String getDistrict() {
         return district;
@@ -84,6 +98,7 @@ public class City {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", countryCode='" + countryCode + '\'' +
+                ", countryName='" + countryName + '\'' +
                 ", district='" + district + '\'' +
                 ", population=" + population +
                 '}';
