@@ -71,7 +71,7 @@ public class City {
         if (district == null || district.trim().isEmpty()) {
             throw new IllegalArgumentException("District must not be null or blank");
         }
-        this.district = district;
+        this.district = district.trim();
     }
 
     // Create a get method to return population
