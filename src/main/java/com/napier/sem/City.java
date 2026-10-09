@@ -75,8 +75,8 @@ public class City {
 
     // Create a set method to validate population
     public void setPopulation(long population) {
-        if (population <= 0){
-            System.out.println("Population must not be negative. ");
+        if (population < 0) {
+            throw new IllegalArgumentException("Population must not be negative: " + population);
         }
         this.population = population;
     }
