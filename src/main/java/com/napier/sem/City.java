@@ -37,20 +37,10 @@ public class City {
 
     // Create a get CountryCode method to return CountryCode
     public String getCountryCode() {
-        if (countryCode == null || countryCode.trim().isEmpty()){
-            System.out.println("Country Code must not be Null or blank. ");
-        }
         return countryCode;
     }
 
     // Create a set method for country code to validate it
-    public void setCountryCode(){
-        if (countryCode == null || countryCode.trim().isEmpty()){
-            System.out.println("Country Code must not be Null or blank. ");
-        }
-    }
-
-    // Create a set CountryCode method to return CountryCode
     public void setCountryCode(String countryCode) {
         if (countryCode == null || countryCode.trim().isEmpty()) {
             throw new IllegalArgumentException("Country code must not be null or blank");
