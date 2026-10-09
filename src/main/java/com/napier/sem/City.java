@@ -29,8 +29,8 @@ public class City {
 
     // Create a set method to validate name
     public void setName(String name) {
-        if (name == null || name.trim().isEmpty()){
-            System.out.println("Name must not be Null or Blank");
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("City name must not be null or blank");
         }
         this.name = name;
     }
