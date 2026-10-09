@@ -8,6 +8,8 @@ public class App {
         con.connect();
 
         // ... your application logic goes here ...
+        CountryReport country =  new CountryReport(con.getConnection());
+        country.generatereport();
 
         // Disconnect from database
         System.out.println("Test");
