@@ -52,7 +52,13 @@ public class City {
 
     // Create a set CountryCode method to return CountryCode
     public void setCountryCode(String countryCode) {
-        this.countryCode = countryCode;
+        if (countryCode == null || countryCode.trim().isEmpty()) {
+            throw new IllegalArgumentException("Country code must not be null or blank");
+        }
+        if (countryCode.trim().length() != 3) {
+            throw new IllegalArgumentException("Country code must be 3 characters: " + countryCode);
+        }
+        this.countryCode = countryCode.trim();
     }
 
     // Create a get district method to return district
