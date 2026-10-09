@@ -1,4 +1,4 @@
-package com.sample.sem;
+package com.napier.sem;
 
 // Create a public class called city to store the methods
 public class City {
