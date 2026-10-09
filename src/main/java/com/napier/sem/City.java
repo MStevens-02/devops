@@ -32,7 +32,7 @@ public class City {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("City name must not be null or blank");
         }
-        this.name = name;
+        this.name = name.trim();
     }
 
     // Create a get CountryCode method to return CountryCode
