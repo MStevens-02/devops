@@ -2,7 +2,7 @@
 
 ## CHARACTERISTIC INFORMATION
 ### Goal in Context
-As an *organisation employee* I want *to generate a report on countries organised by population* so that *I can support strategic planning and demographic assessment.*
+As a *Researcher* I want *to generate a report on countries organised by population* so that *I can support strategic planning and demographic assessment.*
 
 ### Scope
 System.
@@ -20,7 +20,7 @@ A report listing the requested countries sorted by population in descending orde
 No report is produced.
 
 ### Primary Actor
-Organisation Employee.
+Researcher at the World Health Organisation.
 
 ### Trigger
 A request from the employee for country population data.

@@ -2,7 +2,7 @@
 
 ## CHARACTERISTIC INFORMATION
 ### Goal in Context
-As an *organisation employee* I want *to produce a report on major global languages* so that *I can evaluate linguistic accessibility and global reach.*
+As a *Researcher* I want *to produce a report on major global languages* so that *I can evaluate linguistic accessibility and global reach.*
 
 ### Scope
 System.
@@ -20,7 +20,7 @@ A report ranking Chinese, English, Hindi, Spanish, and Arabic by number of speak
 No report is produced.
 
 ### Primary Actor
-Organisation Employee.
+Researcher at the World Health Organisation.
 
 ### Trigger
 A user requests the major languages comparative report.
