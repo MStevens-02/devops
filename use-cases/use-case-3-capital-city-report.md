@@ -2,7 +2,7 @@
 
 ## CHARACTERISTIC INFORMATION
 ### Goal in Context
-As an *organisation employee* I want *to produce a report on capital cities organized by population* so that *I can examine administrative population concentrations.*
+As a *Researcher* I want *to produce a report on capital cities organized by population* so that *I can examine administrative population concentrations.*
 
 ### Scope
 System.
@@ -20,7 +20,7 @@ A report listing capital cities ordered by population is presented.
 No report is produced.
 
 ### Primary Actor
-Organisation Employee.
+Researcher at the World Health Organisation.
 
 ### Trigger
 A user request for capital city demographic data.
