@@ -2,7 +2,7 @@
 
 ## CHARACTERISTIC INFORMATION
 ### Goal in Context
-As an *organisation employee* I want *to generate a breakdown of people living in cities versus outside cities* so that *I can assess urbanisation rates across different geographic levels.*
+As a *Researcher* I want *to generate a breakdown of people living in cities versus outside cities* so that *I can assess urbanisation rates across different geographic levels.*
 
 ### Scope
 System.
@@ -20,7 +20,7 @@ A comparative report displaying total, urban, and non-urban population counts an
 No report is produced.
 
 ### Primary Actor
-Organisation Employee.
+Researcher at the World Health Organisation.
 
 ### Trigger
 A request for an urban/rural population analysis.
