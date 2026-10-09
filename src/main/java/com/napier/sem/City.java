@@ -68,8 +68,8 @@ public class City {
 
     // Create a set district method to validate district
     public void setDistrict(String district) {
-        if(countryCode == null || countryCode.trim().isEmpty()){
-            System.out.println("District must not be Null or Blank. ");
+        if (district == null || district.trim().isEmpty()) {
+            throw new IllegalArgumentException("District must not be null or blank");
         }
         this.district = district;
     }
