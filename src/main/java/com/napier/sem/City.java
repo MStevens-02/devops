@@ -15,7 +15,7 @@ public class City {
         return id;
     }
 
-    // Create a set method to valitate id
+    // Create a set method to validate id
     public void setId(long id) {
         if (id <= 0) {
             throw new IllegalArgumentException("City id must be positive: " + id);
