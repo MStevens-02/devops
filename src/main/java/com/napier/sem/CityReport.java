@@ -58,6 +58,31 @@ public class CityReport {
         return runQuery(BASE_QUERY + DISTRICT_FILTER + ORDER_BY, district);
     }
 
+    // Create a method to return the top N cities in the world
+    public ArrayList<City> getTopCitiesInWorld(int n) {
+        return runQuery(BASE_QUERY + ORDER_BY + "LIMIT ?", n);
+    }
+
+    // Create a method to return the top N cities in a continent
+    public ArrayList<City> getTopCitiesInContinent(String continent, int n) {
+        return runQuery(BASE_QUERY + CONTINENT_FILTER + ORDER_BY + "LIMIT ?", continent, n);
+    }
+
+    // Create a method to return the top N cities in a region
+    public ArrayList<City> getTopCitiesInRegion(String region, int n) {
+        return runQuery(BASE_QUERY + REGION_FILTER + ORDER_BY + "LIMIT ?", region, n);
+    }
+
+    // Create a method to return the top N cities in a country
+    public ArrayList<City> getTopCitiesInCountry(String country, int n) {
+        return runQuery(BASE_QUERY + COUNTRY_FILTER + ORDER_BY + "LIMIT ?", country, n);
+    }
+
+    // Create a method to return the top N cities in a district
+    public ArrayList<City> getTopCitiesInDistrict(String district, int n) {
+        return runQuery(BASE_QUERY + DISTRICT_FILTER + ORDER_BY + "LIMIT ?", district, n);
+    }
+
     // Create a method to run a query and turn each row into a City
     private  ArrayList<City> runQuery(String sql, Object... params){
         ArrayList<City> cities = new ArrayList<>();
