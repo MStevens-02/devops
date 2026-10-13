@@ -3,6 +3,8 @@ package com.napier.sem;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CountryReport {
 
@@ -17,12 +19,15 @@ public class CountryReport {
 
     public CountryReport(Connection con) {
         if (con == null){
-            throw new java.lang.NullPointerException("Con argument cannot be null");
+            throw new java.lang.NullPointerException("Connection argument cannot be null");
         }
         this.con = con;
     }
 
-    public void generatereport() {
+    public void runquery() {
+
+        List<Country> countries = new ArrayList<Country>();
+
         try {
             Statement stmt = con.createStatement();
             ResultSet rset = stmt.executeQuery(BASE_QUERY);
@@ -34,6 +39,7 @@ public class CountryReport {
                 Integer population = rset.getInt("Population");
                 Integer capital = rset.getInt("Capital");
                 String CapitalName = rset.getString("CapitalName");
+
 
                 System.out.println(code);
                 System.out.println(name);
