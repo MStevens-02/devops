@@ -25,13 +25,12 @@ public class App {
         } catch (Exception e) {
             System.out.println("Query failed: " + e.getMessage());
         }
+
+        // Call top 5 city report from app
+        CityReport cityReport = new CityReport(con.getConnection());
+        cityReport.printCities(cityReport.getTopCitiesInWorld(5));
+
         // Disconnect from database
-
-        System.out.println("HelloWorld");
-        System.out.println("Bob");
-
-
-
         con.disconnect();
     }
 }
