@@ -1,8 +1,5 @@
 package com.napier.sem;
 
-import java.sql.ResultSet;
-import java.sql.Statement;
-
 import java.util.List;
 
 /**
@@ -12,31 +9,21 @@ import java.util.List;
 public class App {
 
     public static void main(String[] args) {
+        // N for the "top N" reports. The user can give it as the first argument,
+        // e.g. "java -jar seMethods.jar 10". If nothing is given, 5 is used.
+        int n = readN(args, 5);
+
         // make the object that connects to the database, then connect
         DatabaseConnector con = new DatabaseConnector();
         con.connect();
-        try {
-            Statement stmt = con.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery(
-                    "SELECT Name, Population FROM country ORDER BY Population DESC LIMIT 5"
-            );
 
-            System.out.println("\n--- Top 5 Most Populous Countries ---");
-            while (rs.next()) {
-                String name = rs.getString("Name");
-                int population = rs.getInt("Population");
-                System.out.println(name + ": " + population);
-            }
+        // UC1 - country reports
+        showCountryReports(con, n);
 
-        } catch (Exception e) {
-            System.out.println("Query failed: " + e.getMessage());
-        }
-
-        // Call top 5 city report from app
+        // UC2 - city reports
         CityReport cityReport = new CityReport(con.getConnection());
-        cityReport.printCities(cityReport.getTopCitiesInWorld(5));
+        cityReport.printCities(cityReport.getTopCitiesInWorld(n));
 
-        // Disconnect from database
         // UC5 - print some population lookups
         showPopulationLookups(con);
 
@@ -47,9 +34,34 @@ public class App {
         con.disconnect();
     }
 
-    // ---------------------------------------------------------------------
+    // UC1 - country reports
+
+    // Prints all 6 country reports.
+    // n = how many countries to show in the "top N" reports
+    public static void showCountryReports(DatabaseConnector con, int n) {
+        // this object runs the country queries
+        CountryReport countryReport = new CountryReport(con.getConnection());
+
+        countryReport.printReport("All countries in the world",
+                countryReport.getAllCountries());
+
+        countryReport.printReport("All countries in Europe",
+                countryReport.getCountriesByContinent("Europe"));
+
+        countryReport.printReport("All countries in the Caribbean",
+                countryReport.getCountriesByRegion("Caribbean"));
+
+        countryReport.printReport("Top " + n + " countries in the world",
+                countryReport.getTopCountries(n));
+
+        countryReport.printReport("Top " + n + " countries in Asia",
+                countryReport.getTopCountriesByContinent("Asia", n));
+
+        countryReport.printReport("Top " + n + " countries in Western Europe",
+                countryReport.getTopCountriesByRegion("Western Europe", n));
+    }
+
     // UC5 - population lookups
-    // ---------------------------------------------------------------------
 
     // Tries a few lookups so we can see that they work.
     public static void showPopulationLookups(DatabaseConnector con) {
@@ -92,9 +104,7 @@ public class App {
         }
     }
 
-    // ---------------------------------------------------------------------
     // UC4 - population breakdown reports
-    // ---------------------------------------------------------------------
 
     // Prints the breakdown for every continent, every region and every country.
     public static void showPopulationBreakdowns(DatabaseConnector con) {
@@ -127,5 +137,26 @@ public class App {
         for (PopulationBreakdown row : rows) {
             System.out.println(row);
         }
+    }
+
+    // Reading N
+
+    // Reads N from the first program argument.
+    // If there is no argument, or it is not a whole number above 0,
+    // the default value is used instead.
+    private static int readN(String[] args, int defaultValue) {
+        if (args.length == 0) {
+            return defaultValue;
+        }
+        try {
+            int n = Integer.parseInt(args[0].trim());
+            if (n >= 1) {
+                return n;
+            }
+            System.out.println("N must be 1 or more. Using " + defaultValue + " instead.");
+        } catch (NumberFormatException e) {
+            System.out.println("N must be a whole number. Using " + defaultValue + " instead.");
+        }
+        return defaultValue;
     }
 }
