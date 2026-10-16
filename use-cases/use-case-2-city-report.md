@@ -2,7 +2,7 @@
 
 ## CHARACTERISTIC INFORMATION
 ### Goal in Context
-As an *organisation employee* I want *to produce a report on cities organised by population* so that *I can support urban planning and regional demographic analysis.*
+As a *Researcher* I want *to produce a report on cities organised by population* so that *I can support urban planning and regional demographic analysis.*
 
 ### Scope
 System.
@@ -20,7 +20,7 @@ A report listing the requested cities sorted by population is generated.
 No report is produced.
 
 ### Primary Actor
-Organisation Employee.
+Researcher at the World Health Organisation.
 
 ### Trigger
 A user request for city demographic data.

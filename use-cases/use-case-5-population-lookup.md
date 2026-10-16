@@ -2,7 +2,7 @@
 
 ## CHARACTERISTIC INFORMATION
 ### Goal in Context
-As an *organisation employee* I want *to query the exact population of a specific geographical entity* so that *I have quick, targeted figures for documentation or decision-making.*
+As a *Researcher* I want *to query the exact population of a specific geographical entity* so that *I have quick, targeted figures for documentation or decision-making.*
 
 ### Scope
 System.
@@ -20,7 +20,7 @@ A single quantitative figure representing the population of the requested area i
 No figure is returned or an error is displayed.
 
 ### Primary Actor
-Organisation Employee.
+Researcher at the World Health Organisation.
 
 ### Trigger
 A direct query for a specific area's total population.
