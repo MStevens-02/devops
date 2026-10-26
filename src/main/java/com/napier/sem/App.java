@@ -32,7 +32,23 @@ public class App {
             System.out.println("Query failed: " + e.getMessage());
         }
 
-        // Call top 5 city report from app
+        // Load the user inputs from input.txt
+        Properties input = new Properties();
+        try (InputStream in = App.class.getResourceAsStream("/input.txt")) {
+            input.load(in);
+        } catch (IOException | NullPointerException e) {
+            System.out.println("Couldn't load input.txt");
+            con.disconnect();
+            return;
+        }
+
+        int n = Integer.parseInt(input.getProperty("n"));
+        String continent = input.getProperty("continent");
+        String region = input.getProperty("region");
+        String country = input.getProperty("country");
+        String district = input.getProperty("district");
+
+        // City reports
         CityReport cityReport = new CityReport(con.getConnection());
         cityReport.printCities(cityReport.getTopCitiesInWorld(5));
 
