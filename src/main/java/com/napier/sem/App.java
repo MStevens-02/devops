@@ -30,6 +30,9 @@ public class App {
         // UC4 - print the population breakdown reports
         showPopulationBreakdowns(con);
 
+        // UC - Language report
+        showLanguageReport(con);
+
         // always disconnect when we are finished
         con.disconnect();
     }
@@ -138,6 +141,14 @@ public class App {
             System.out.println(row);
         }
     }
+
+
+    // Language report
+    public static void showLanguageReport(DatabaseConnector con) {
+        LanguageReport languageReport = new LanguageReport(con.getConnection());
+        languageReport.displayLanguageReport();
+    }
+
 
     // Reading N
 
