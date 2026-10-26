@@ -129,26 +129,32 @@ public class CountryReport {
     /**
      * Prints a report as a table.
      * It shows the title, the column names, a line, and then one row per country.
+     * It is static because it only prints the list it is given and never uses the database.
      *
      * @param title     the name of the report, shown at the top
-     * @param countries the countries to print
+     * @param countries the countries to print (can be null or empty)
      */
-    public void printReport(String title, List<Country> countries) {
+    public static void printReport(String title, List<Country> countries) {
         String header = String.format(HEADER_FORMAT,
                 "Code", "Name", "Continent", "Region", "Population", "Capital");
 
         System.out.println();
         System.out.println(title);
-        System.out.println(header);
-        System.out.println("-".repeat(header.length()));
 
-        // If there are no results, say so instead of printing an empty table.
-        if (countries.isEmpty()) {
+        // If there is no list or it is empty, say so instead of printing an empty table.
+        if (countries == null || countries.isEmpty()) {
             System.out.println("No countries found.");
             return;
         }
 
+        System.out.println(header);
+        System.out.println("-".repeat(header.length()));
+
         for (Country country : countries) {
+            // Skip any missing entries so one bad item does not stop the whole report.
+            if (country == null) {
+                continue;
+            }
             System.out.println(country.toReportRow());
         }
     }
