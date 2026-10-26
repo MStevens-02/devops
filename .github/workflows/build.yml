@@ -21,7 +21,7 @@ jobs:
           docker build -t database ./db
           docker run --name world -dp 33060:3306 database
           sleep 30
-          mvn -Dtest=com.napier.sem.CountryReportIntegrationTest test
+          mvn test -Dgroups=integration -Dtest.excluded=none
           docker stop world
           docker rm world
           docker image rm database
