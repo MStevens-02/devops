@@ -50,7 +50,12 @@ public class App {
 
         // City reports
         CityReport cityReport = new CityReport(con.getConnection());
-        cityReport.printCities(cityReport.getTopCitiesInWorld(5));
+
+        cityReport.printCities(cityReport.getAllCitiesInWorld());
+        cityReport.printCities(cityReport.getAllCitiesInContinent(continent));
+        cityReport.printCities(cityReport.getAllCitiesInRegion(region));
+        cityReport.printCities(cityReport.getAllCitiesInCountry(country));
+        cityReport.printCities(cityReport.getAllCitiesInDistrict(district));
 
         // Disconnect from database
         // UC5 - print some population lookups
