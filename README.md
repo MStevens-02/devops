@@ -1,7 +1,7 @@
 # Team 5 - Population Reporting System
 
 ![workflow](https://github.com/MStevens-02/devops/actions/workflows/build.yml/badge.svg)
-[![LICENSE](https://img.shields.io/github/license/MStevens-02/devops.svg?style=flat-square)](https://github.com/MStevens-02/devops/blob/master/LICENSE)
+[![LICENSE](https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat-square)](https://github.com/MStevens-02/devops/blob/master/LICENSE)
 [![Releases](https://img.shields.io/github/release/MStevens-02/devops/all.svg?style=flat-square)](https://github.com/MStevens-02/devops/releases)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/MStevens-02/devops)
 
