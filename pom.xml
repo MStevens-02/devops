@@ -46,8 +46,7 @@
                 </configuration>
             </plugin>
 
-            <!-- JaCoCo creates the code coverage report in target/site/jacoco (Lab 07).
-                 The lab uses 0.8.2, but that version does not work with Java 17. -->
+            <!-- JaCoCo creates the code coverage report in target/site/jacoco. -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
