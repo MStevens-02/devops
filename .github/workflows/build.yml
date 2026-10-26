@@ -3,21 +3,41 @@ name: Building and Running in Docker Workflow
 on: push
 
 jobs:
-  build:
-    name: Building our Application
-    runs-on: ubuntu-22.04
+  IntegrationTests:
+    name: Integration Tests
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
+        with:
+          submodules: recursive
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
+      - name: Integration Tests
+        run: |
+          docker build -t database ./db
+          docker run --name world -dp 33060:3306 database
+          sleep 30
+          mvn -Dtest=com.napier.sem.CountryReportIntegrationTest test
+          docker stop world
+          docker rm world
+          docker image rm database
 
+  build:
+    name: Building our Application
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
       - name: Build with Maven
-        run: mvn clean package
-
+        run: mvn clean package -DskipTests
       - name: Run docker compose
         run: docker compose up --build --abort-on-container-exit
