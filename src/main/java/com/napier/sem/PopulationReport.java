@@ -8,72 +8,100 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * UC5 - the population lookup.
- * Give it a type (world, continent, region, country, district or city)
- * and a name, and it gives back the population.
+ * The population lookup (UC5).
+ * <p>
+ * You tell it what kind of place you want (world, continent, region, country, district or city)
+ * and the name of the place, and it tells you how many people live there.
+ * Each type of place has its own method with its own SQL in it.
  */
 public class PopulationReport {
 
-    // the connection to the database (we are given this when the class is made)
+    /** The link to the database. If it's null we can't look anything up. */
     private Connection con;
 
+    /**
+     * Makes a new lookup.
+     *
+     * @param con the database connection (null means no database)
+     */
     public PopulationReport(Connection con) {
         this.con = con;
     }
 
     /**
-     * The main method.
-     * type = one of: world, continent, region, country, district, city
-     * name = the area to look up (it is ignored for the world)
-     * Gives back a list of answers. The list is empty if nothing was found.
-     * Gives back an error if the type or name is not okay.
+     * Looks up how many people live somewhere. This is the main method.
+     * <p>
+     * Usually you get one answer back, but sometimes you get more.
+     * For example there are two cities called Birmingham so you get both of them.
+     * If the place doesn't exist you get an empty list.
+     *
+     * @param type what kind of place: world, continent, region, country, district or city
+     * @param name the name of the place, like "France" (not needed for the world)
+     * @return a list of answers, empty if nothing was found
+     * @throws IllegalArgumentException if the type or name is blank, or the type is made up
      */
     public List<Population> getPopulation(String type, String name) {
-        // step 1: clean up the type so "  Country " becomes "country"
+        // check we got a type
         if (type == null || type.trim().isEmpty()) {
             throw new IllegalArgumentException("Type must not be blank");
         }
+
+        // make the type lower case with no spaces, so "  COUNTRY " turns into "country"
         type = type.trim().toLowerCase();
 
-        // step 2: every type except the world needs a name
-        if (!type.equals("world") && (name == null || name.trim().isEmpty())) {
-            throw new IllegalArgumentException("Name must not be blank");
+        // check the type is one we know about
+        if (!type.equals("world") && !type.equals("continent") && !type.equals("region")
+                && !type.equals("country") && !type.equals("district") && !type.equals("city")) {
+            throw new IllegalArgumentException("Unknown type '" + type
+                    + "'. Use world, continent, region, country, district or city");
         }
 
-        // step 3: if there is no connection we can not ask the database anything
+        // everything except the world needs a name
+        if (!type.equals("world")) {
+            if (name == null || name.trim().isEmpty()) {
+                throw new IllegalArgumentException("Name must not be blank");
+            }
+            name = name.trim();
+        }
+
+        // if there's no database we can't do anything, so just give back an empty list
         if (con == null) {
             System.out.println("No database connection");
             return new ArrayList<Population>();
         }
 
-        // step 4: call the method for the type
+        // call the right method for the type
         if (type.equals("world")) {
             return getWorldPopulation();
         } else if (type.equals("continent")) {
-            return getAreaPopulation("SELECT SUM(Population) AS Total FROM country WHERE Continent = ?", name.trim());
+            return getContinentPopulation(name);
         } else if (type.equals("region")) {
-            return getAreaPopulation("SELECT SUM(Population) AS Total FROM country WHERE Region = ?", name.trim());
+            return getRegionPopulation(name);
         } else if (type.equals("country")) {
-            return getAreaPopulation("SELECT Population AS Total FROM country WHERE Name = ?", name.trim());
+            return getCountryPopulation(name);
         } else if (type.equals("district")) {
-            return getAreaPopulation("SELECT SUM(Population) AS Total FROM city WHERE District = ?", name.trim());
-        } else if (type.equals("city")) {
-            return getCityPopulation(name.trim());
+            return getDistrictPopulation(name);
         } else {
-            throw new IllegalArgumentException(
-                    "Unknown type '" + type + "'. Use world, continent, region, country, district or city");
+            return getCityPopulation(name);
         }
     }
 
-    // World: add up the population of every country.
+    /**
+     * Gets the population of the whole world by adding up every country.
+     *
+     * @return one answer called "World"
+     */
     private List<Population> getWorldPopulation() {
         List<Population> answers = new ArrayList<Population>();
         try {
-            PreparedStatement stmt = con.prepareStatement("SELECT SUM(Population) AS Total FROM country");
+            PreparedStatement stmt = con.prepareStatement(
+                    "SELECT SUM(Population) AS Total FROM country");
             ResultSet rs = stmt.executeQuery();
+
             if (rs.next()) {
                 answers.add(new Population("World", rs.getLong("Total")));
             }
+
             rs.close();
             stmt.close();
         } catch (SQLException e) {
@@ -83,57 +111,146 @@ public class PopulationReport {
     }
 
     /**
-     * Used for continent, region, country and district.
-     * They all give back ONE number called Total, so one method can do them all.
-     * The ? in the query is a gap that is filled with the name the user typed.
-     * This is safer than joining the text on, because it stops SQL injection.
-     * If nothing was found, SUM gives NULL, so we give back an empty list.
+     * Gets the population of a continent by adding up all the countries in it.
+     * <p>
+     * The ? in the SQL gets filled in with the name. We do it like this instead of just
+     * sticking the name into the SQL, because that would let people do SQL injection.
+     * GROUP BY means if the continent doesn't exist we get no rows back at all.
+     *
+     * @param continent the continent, like "Asia"
+     * @return one answer, or an empty list if it wasn't found
      */
-    private List<Population> getAreaPopulation(String sql, String name) {
+    private List<Population> getContinentPopulation(String continent) {
         List<Population> answers = new ArrayList<Population>();
         try {
-            // prepare the query and fill in the ? with the name
-            PreparedStatement stmt = con.prepareStatement(sql);
-            stmt.setString(1, name);
-
-            // run the query
+            PreparedStatement stmt = con.prepareStatement(
+                    "SELECT Continent, SUM(Population) AS Total FROM country "
+                            + "WHERE Continent = ? GROUP BY Continent");
+            stmt.setString(1, continent);
             ResultSet rs = stmt.executeQuery();
 
-            // there is only one row, so we use if instead of a loop
             if (rs.next()) {
-                long total = rs.getLong("Total");
-
-                // wasNull() is true if the database value was NULL (nothing found)
-                if (!rs.wasNull()) {
-                    answers.add(new Population(name, total));
-                }
+                answers.add(new Population(rs.getString("Continent"), rs.getLong("Total")));
             }
 
-            // always close things when finished
             rs.close();
             stmt.close();
         } catch (SQLException e) {
-            System.out.println("Could not get population: " + e.getMessage());
+            System.out.println("Could not get continent population: " + e.getMessage());
         }
         return answers;
     }
 
-    // City: some cities share a name (for example there are several Birminghams),
-    // so this can give back more than one answer. We join the country table
-    // so we can show which country each city is in.
-    private List<Population> getCityPopulation(String cityName) {
+    /**
+     * Gets the population of a region by adding up all the countries in it.
+     *
+     * @param region the region, like "Caribbean"
+     * @return one answer, or an empty list if it wasn't found
+     */
+    private List<Population> getRegionPopulation(String region) {
         List<Population> answers = new ArrayList<Population>();
-        String sql = "SELECT city.Name, city.District, country.Name AS Country, city.Population "
-                + "FROM city JOIN country ON city.CountryCode = country.Code "
-                + "WHERE city.Name = ?";
         try {
-            PreparedStatement stmt = con.prepareStatement(sql);
-            stmt.setString(1, cityName);
+            PreparedStatement stmt = con.prepareStatement(
+                    "SELECT Region, SUM(Population) AS Total FROM country "
+                            + "WHERE Region = ? GROUP BY Region");
+            stmt.setString(1, region);
             ResultSet rs = stmt.executeQuery();
 
-            // go through each row that came back
+            if (rs.next()) {
+                answers.add(new Population(rs.getString("Region"), rs.getLong("Total")));
+            }
+
+            rs.close();
+            stmt.close();
+        } catch (SQLException e) {
+            System.out.println("Could not get region population: " + e.getMessage());
+        }
+        return answers;
+    }
+
+    /**
+     * Gets the population of a country. The country table already has it so no adding up needed.
+     *
+     * @param country the country, like "France"
+     * @return one answer, or an empty list if it wasn't found
+     */
+    private List<Population> getCountryPopulation(String country) {
+        List<Population> answers = new ArrayList<Population>();
+        try {
+            PreparedStatement stmt = con.prepareStatement(
+                    "SELECT Name, Population FROM country WHERE Name = ?");
+            stmt.setString(1, country);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                answers.add(new Population(rs.getString("Name"), rs.getLong("Population")));
+            }
+
+            rs.close();
+            stmt.close();
+        } catch (SQLException e) {
+            System.out.println("Could not get country population: " + e.getMessage());
+        }
+        return answers;
+    }
+
+    /**
+     * Gets the population of a district by adding up its cities.
+     * <p>
+     * Some districts have the same name in different countries (there's a "Central" in 7 countries).
+     * Adding them all together would be a pointless number, so we give one answer per country,
+     * like "Scotland, United Kingdom".
+     *
+     * @param district the district, like "Scotland"
+     * @return one answer for each country that has a district with this name
+     */
+    private List<Population> getDistrictPopulation(String district) {
+        List<Population> answers = new ArrayList<Population>();
+        try {
+            PreparedStatement stmt = con.prepareStatement(
+                    "SELECT city.District, country.Name AS Country, SUM(city.Population) AS Total "
+                            + "FROM city JOIN country ON city.CountryCode = country.Code "
+                            + "WHERE city.District = ? "
+                            + "GROUP BY country.Code, country.Name, city.District "
+                            + "ORDER BY country.Name");
+            stmt.setString(1, district);
+            ResultSet rs = stmt.executeQuery();
+
+            // one row for each country
             while (rs.next()) {
-                // build a label like "Edinburgh, Scotland, United Kingdom"
+                String label = rs.getString("District") + ", " + rs.getString("Country");
+                answers.add(new Population(label, rs.getLong("Total")));
+            }
+
+            rs.close();
+            stmt.close();
+        } catch (SQLException e) {
+            System.out.println("Could not get district population: " + e.getMessage());
+        }
+        return answers;
+    }
+
+    /**
+     * Gets the population of a city.
+     * <p>
+     * Some cities have the same name (like Birmingham), so we put the district and country
+     * in the name too so you can tell them apart, like "Edinburgh, Scotland, United Kingdom".
+     *
+     * @param city the city, like "Edinburgh"
+     * @return one answer for each city with this name
+     */
+    private List<Population> getCityPopulation(String city) {
+        List<Population> answers = new ArrayList<Population>();
+        try {
+            PreparedStatement stmt = con.prepareStatement(
+                    "SELECT city.Name, city.District, country.Name AS Country, city.Population "
+                            + "FROM city JOIN country ON city.CountryCode = country.Code "
+                            + "WHERE city.Name = ?");
+            stmt.setString(1, city);
+            ResultSet rs = stmt.executeQuery();
+
+            // one row for each city with this name
+            while (rs.next()) {
                 String label = rs.getString("Name") + ", " + rs.getString("District")
                         + ", " + rs.getString("Country");
                 answers.add(new Population(label, rs.getLong("Population")));
