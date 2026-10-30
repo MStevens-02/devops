@@ -3,6 +3,26 @@ name: Building and Running in Docker Workflow
 on: push
 
 jobs:
+  UnitTests:
+    name: Unit Tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Unit Tests
+        run: mvn test
+      - name: CodeCov
+        uses: codecov/codecov-action@v5
+        with:
+          directory: ./target/site/jacoco
+          flags: Unit Tests
+          verbose: true
+
   IntegrationTests:
     name: Integration Tests
     runs-on: ubuntu-24.04
