@@ -10,87 +10,106 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration tests for PopulationBreakdownReport (UC4, the population breakdown).
+ * Tests for the population breakdown (UC4) that use the REAL database.
  * <p>
- * These tests use the real world database, so it must be running on localhost:33060
- * (start the db service from docker-compose).
- * <p>
- * The "integration" tag means these tests only run when asked for:
+ * The database needs to be running on localhost:33060 for these to work
+ * (start it with docker-compose). They only run when you ask for them with:
  * mvn test -Dgroups=integration -Dtest.excluded=none
  * <p>
- * The expected numbers come from the world database (db/world_db/world.sql).
+ * All the numbers we check against come from db/world_db/world.sql.
  */
 @Tag("integration")
 public class PopulationBreakdownReportIntegrationTest {
 
-    // Percentages are doubles, so we allow a tiny difference when comparing them.
-    private static final double DELTA = 0.001;
+    /** Percentages are decimals, so we let them be off by a tiny tiny bit. */
+    private static final double CLOSE_ENOUGH = 0.001;
 
+    /** The world population. Every breakdown should add up to this. */
+    private static final long WORLD = 6078749450L;
+
+    /** The database connection, shared by every test. */
     static DatabaseConnector con;
+
+    /** The breakdown report we're testing. */
     static PopulationBreakdownReport report;
 
-    // Connects to the database once, before all the tests.
+    /** The three breakdowns, grabbed once at the start so we don't keep asking the database. */
+    static List<PopulationBreakdown> continents;
+    static List<PopulationBreakdown> regions;
+    static List<PopulationBreakdown> countries;
+
+    /**
+     * Connects to the database and gets all three breakdowns once before any tests run.
+     */
     @BeforeAll
-    static void init() {
+    static void connect() {
         con = new DatabaseConnector();
         con.connect("localhost:33060", 30000);
         report = new PopulationBreakdownReport(con.getConnection());
+
+        continents = report.getContinentBreakdown();
+        regions = report.getRegionBreakdown();
+        countries = report.getCountryBreakdown();
     }
 
-    // Closes the database connection after all the tests.
+    /**
+     * Disconnects from the database once all the tests are done.
+     */
     @AfterAll
-    static void cleanUp() {
+    static void disconnect() {
         con.disconnect();
     }
 
-    // Finds the row with this name, or gives back null if there is no such row.
-    private PopulationBreakdown find(List<PopulationBreakdown> rows, String name) {
-        for (PopulationBreakdown row : rows) {
-            if (row.getName().equals(name)) {
-                return row;
+    /**
+     * Looks through a list for the line with this name. Fails the test if it isn't there.
+     *
+     * @param lines the list to look through
+     * @param name  the name we want
+     * @return the line with that name
+     */
+    private PopulationBreakdown lineFor(List<PopulationBreakdown> lines, String name) {
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i).getName().equals(name)) {
+                return lines.get(i);
             }
         }
+        fail(name + " wasn't in the list");
         return null;
     }
 
-    // Adds up the total population of every row.
-    private long sumOfTotals(List<PopulationBreakdown> rows) {
-        long sum = 0;
-        for (PopulationBreakdown row : rows) {
-            sum = sum + row.getTotalPopulation();
+    /**
+     * Adds up the totals of every line in a list.
+     *
+     * @param lines the list to add up
+     * @return all the totals added together
+     */
+    private long addUpTotals(List<PopulationBreakdown> lines) {
+        long total = 0;
+        for (PopulationBreakdown line : lines) {
+            total += line.getTotalPopulation();
         }
-        return sum;
+        return total;
     }
 
-    // Continent breakdown
+    // ===== continents =====
 
-    // There are 7 continents.
+    /**
+     * There are 7 continents and they're in A to Z order.
+     */
     @Test
-    void thereAreSevenContinents() {
-        // step 1: get the continent breakdown
-        // step 2: check there are 7 rows
-        assertEquals(7, report.getContinentBreakdown().size());
+    void sevenContinentsInOrder() {
+        assertEquals(7, continents.size());
+        assertEquals("Africa", continents.get(0).getName());
+        assertEquals("South America", continents.get(6).getName());
     }
 
-    // The rows are in name order, so Africa is first and South America is last.
+    /**
+     * The real Asia numbers.
+     */
     @Test
-    void continentsAreInNameOrder() {
-        // step 1: get the continent breakdown
-        // step 2: check the first row is Africa and the last row is South America
-        List<PopulationBreakdown> rows = report.getContinentBreakdown();
+    void asia() {
+        PopulationBreakdown asia = lineFor(continents, "Asia");
 
-        assertEquals("Africa", rows.get(0).getName());
-        assertEquals("South America", rows.get(rows.size() - 1).getName());
-    }
-
-    // The real Asia numbers.
-    @Test
-    void asiaBreakdownIsCorrect() {
-        // step 1: get the continent breakdown and find the Asia row
-        // step 2: check the total, the city number, the non-city number and the percentage
-        PopulationBreakdown asia = find(report.getContinentBreakdown(), "Asia");
-
-        assertNotNull(asia);
         assertEquals(3705025700L, asia.getTotalPopulation());
         assertEquals(697604103L, asia.getCityPopulation());
         assertEquals(3007421597L, asia.getNonCityPopulation());
@@ -98,177 +117,253 @@ public class PopulationBreakdownReportIntegrationTest {
         assertEquals(81.17, asia.getNonCityPercentage(), 0.01);
     }
 
-    // The real Europe numbers.
+    /**
+     * The real Europe numbers.
+     */
     @Test
-    void europeBreakdownIsCorrect() {
-        // step 1: get the continent breakdown and find the Europe row
-        // step 2: check the total and the number living in cities
-        PopulationBreakdown europe = find(report.getContinentBreakdown(), "Europe");
+    void europe() {
+        PopulationBreakdown europe = lineFor(continents, "Europe");
 
-        assertNotNull(europe);
         assertEquals(730074600L, europe.getTotalPopulation());
         assertEquals(241942813L, europe.getCityPopulation());
     }
 
-    // The continent totals add up to the world population.
-    // (This would fail if the cities were joined in the wrong way and counted too many times.)
+    /**
+     * Nobody lives in Antarctica, so it's all zeros and 0% (and nothing crashes from dividing by 0).
+     */
     @Test
-    void continentTotalsAddUpToTheWorld() {
-        // step 1: add up the total of every continent row
-        // step 2: check it is the world population (6078749450)
-        assertEquals(6078749450L, sumOfTotals(report.getContinentBreakdown()));
-    }
+    void antarcticaIsAllZeros() {
+        PopulationBreakdown antarctica = lineFor(continents, "Antarctica");
 
-    // Antarctica has nobody in it, so it is all zeros with 0% (and no divide by zero).
-    @Test
-    void antarcticaContinentIsAllZero() {
-        // step 1: find the Antarctica row
-        // step 2: check everything is 0 and both percentages are 0
-        PopulationBreakdown antarctica = find(report.getContinentBreakdown(), "Antarctica");
-
-        assertNotNull(antarctica);
         assertEquals(0, antarctica.getTotalPopulation());
         assertEquals(0, antarctica.getCityPopulation());
-        assertEquals(0.0, antarctica.getCityPercentage(), DELTA);
-        assertEquals(0.0, antarctica.getNonCityPercentage(), DELTA);
+        assertEquals(0.0, antarctica.getCityPercentage(), CLOSE_ENOUGH);
+        assertEquals(0.0, antarctica.getNonCityPercentage(), CLOSE_ENOUGH);
     }
 
-    // Region breakdown
+    // ===== regions =====
 
-    // There are 25 regions.
+    /**
+     * There are 25 regions, and the Caribbean matches what the lookup says.
+     */
     @Test
-    void thereAreTwentyFiveRegions() {
-        // step 1: get the region breakdown
-        // step 2: check there are 25 rows
-        assertEquals(25, report.getRegionBreakdown().size());
+    void regionsAndCaribbean() {
+        assertEquals(25, regions.size());
+        assertEquals(38140000L, lineFor(regions, "Caribbean").getTotalPopulation());
     }
 
-    // The Caribbean total matches the lookup number.
-    @Test
-    void caribbeanRegionTotalIsCorrect() {
-        // step 1: find the Caribbean row
-        // step 2: check its total is 38140000, the same as the lookup
-        PopulationBreakdown caribbean = find(report.getRegionBreakdown(), "Caribbean");
+    // ===== countries =====
 
-        assertNotNull(caribbean);
-        assertEquals(38140000L, caribbean.getTotalPopulation());
+    /**
+     * There are 239 countries, and France has the right number.
+     */
+    @Test
+    void countriesAndFrance() {
+        assertEquals(239, countries.size());
+        assertEquals(59225700L, lineFor(countries, "France").getTotalPopulation());
     }
 
-    // The region totals add up to the world population.
+    /**
+     * Bouvet Island has no cities but it should still be in the list, with 0 in cities.
+     */
     @Test
-    void regionTotalsAddUpToTheWorld() {
-        // step 1: add up the total of every region row
-        // step 2: check it is the world population
-        assertEquals(6078749450L, sumOfTotals(report.getRegionBreakdown()));
+    void countryWithNoCitiesStillShowsUp() {
+        assertEquals(0, lineFor(countries, "Bouvet Island").getCityPopulation());
     }
 
-    // Country breakdown
-
-    // There are 239 countries.
+    /**
+     * Singapore has more city people than total people in the database (a data mistake).
+     * It should still be in the list, get flagged, and have a star when it's printed.
+     */
     @Test
-    void thereAreTwoHundredAndThirtyNineCountries() {
-        // step 1: get the country breakdown
-        // step 2: check there are 239 rows
-        assertEquals(239, report.getCountryBreakdown().size());
-    }
+    void singaporeGetsFlagged() {
+        PopulationBreakdown singapore = lineFor(countries, "Singapore");
 
-    // The country totals add up to the world population.
-    @Test
-    void countryTotalsAddUpToTheWorld() {
-        // step 1: add up the total of every country row
-        // step 2: check it is the world population
-        assertEquals(6078749450L, sumOfTotals(report.getCountryBreakdown()));
-    }
-
-    // France total matches the country table.
-    @Test
-    void franceTotalIsCorrect() {
-        // step 1: find the France row
-        // step 2: check its total is 59225700
-        PopulationBreakdown france = find(report.getCountryBreakdown(), "France");
-
-        assertNotNull(france);
-        assertEquals(59225700L, france.getTotalPopulation());
-    }
-
-    // A country with no cities in the database must still be listed, with 0 in cities.
-    @Test
-    void countryWithNoCitiesIsStillListed() {
-        // step 1: find Bouvet Island, which has no cities
-        // step 2: check it is in the list and has 0 in cities
-        PopulationBreakdown bouvet = find(report.getCountryBreakdown(), "Bouvet Island");
-
-        assertNotNull(bouvet);
-        assertEquals(0, bouvet.getCityPopulation());
-    }
-
-    // Singapore has more city people than country people in the database (a data problem).
-    // The report must still show it, and flag it.
-    @Test
-    void singaporeIsFlaggedAsADataMismatch() {
-        // step 1: find the Singapore row
-        // step 2: check it is flagged as a mismatch
-        // step 3: check the printed line has a * on it
-        PopulationBreakdown singapore = find(report.getCountryBreakdown(), "Singapore");
-
-        assertNotNull(singapore);
         assertEquals(3567000L, singapore.getTotalPopulation());
         assertEquals(4017733L, singapore.getCityPopulation());
         assertTrue(singapore.isDataMismatch());
+        assertTrue(singapore.toString().contains("*"));
     }
 
-    // Only 3 countries have this problem: Cocos Islands, Gibraltar and Singapore.
+    /**
+     * Only 3 countries have that mistake: Cocos Islands, Gibraltar and Singapore.
+     */
     @Test
-    void exactlyThreeCountriesAreMismatches() {
-        // step 1: go through every country row and count the ones flagged
-        // step 2: check the count is exactly 3
-        int count = 0;
-        for (PopulationBreakdown row : report.getCountryBreakdown()) {
-            if (row.isDataMismatch()) {
-                count++;
+    void onlyThreeDodgyCountries() {
+        int dodgy = 0;
+        for (PopulationBreakdown country : countries) {
+            if (country.isDataMismatch()) {
+                dodgy++;
             }
         }
-
-        assertEquals(3, count);
+        assertEquals(3, dodgy);
     }
 
-    // Checks that apply to every row of every report
-
-    // For every row: city people + non-city people = total, and the percentages add up to 100
-    // (a total of 0 gives 0% and 0%).
+    /**
+     * The UK's real numbers: 59,623,400 people and 22,436,673 of them in cities.
+     */
     @Test
-    void everyRowAddsUp() {
-        // step 1: check every row in the continent, region and country breakdowns (see the helper below)
-        checkEveryRow(report.getContinentBreakdown());
-        checkEveryRow(report.getRegionBreakdown());
-        checkEveryRow(report.getCountryBreakdown());
+    void unitedKingdom() {
+        PopulationBreakdown uk = lineFor(countries, "United Kingdom");
+
+        assertEquals(59623400L, uk.getTotalPopulation());
+        assertEquals(22436673L, uk.getCityPopulation());
+        assertEquals(37186727L, uk.getNonCityPopulation());
     }
 
-    // Does the checks for one list of rows.
-    private void checkEveryRow(List<PopulationBreakdown> rows) {
-        for (PopulationBreakdown row : rows) {
-            assertEquals(row.getTotalPopulation(),
-                    row.getCityPopulation() + row.getNonCityPopulation(),
-                    row.getName() + " should add up");
+    /**
+     * 7 countries have no cities in the database, and every one of them should still be listed with 0.
+     */
+    @Test
+    void sevenCountriesHaveNoCities() {
+        int noCities = 0;
+        for (PopulationBreakdown country : countries) {
+            if (country.getCityPopulation() == 0) {
+                noCities++;
+            }
+        }
+        assertEquals(7, noCities);
+    }
 
-            double sum = row.getCityPercentage() + row.getNonCityPercentage();
-            if (row.getTotalPopulation() == 0) {
-                assertEquals(0.0, sum, DELTA, row.getName());
+    /**
+     * The regions Antarctica and Micronesia/Caribbean have no cities, so they should show 0 in cities.
+     */
+    @Test
+    void regionsWithNoCitiesShowZero() {
+        assertEquals(0, lineFor(regions, "Antarctica").getCityPopulation());
+        assertEquals(0, lineFor(regions, "Micronesia/Caribbean").getCityPopulation());
+    }
+
+    // ===== order =====
+
+    /**
+     * All 7 continents, in A to Z order.
+     */
+    @Test
+    void continentsAreInOrder() {
+        String[] expected = {"Africa", "Antarctica", "Asia", "Europe",
+                "North America", "Oceania", "South America"};
+
+        for (int i = 0; i < expected.length; i++) {
+            assertEquals(expected[i], continents.get(i).getName());
+        }
+    }
+
+    /**
+     * Regions are in A to Z order, from "Antarctica" to "Western Europe".
+     */
+    @Test
+    void regionsAreInOrder() {
+        assertEquals("Antarctica", regions.get(0).getName());
+        assertEquals("Western Europe", regions.get(regions.size() - 1).getName());
+
+        for (int i = 1; i < regions.size(); i++) {
+            String before = regions.get(i - 1).getName();
+            String now = regions.get(i).getName();
+            assertTrue(before.compareToIgnoreCase(now) < 0, before + " should be before " + now);
+        }
+    }
+
+    /**
+     * Countries are in A to Z order, so Afghanistan is first and Zimbabwe is last.
+     */
+    @Test
+    void countriesAreInOrder() {
+        assertEquals("Afghanistan", countries.get(0).getName());
+        assertEquals("Zimbabwe", countries.get(countries.size() - 1).getName());
+    }
+
+    // ===== checks on everything =====
+
+    /**
+     * Adds up the city people of every line in a list.
+     *
+     * @param lines the list to add up
+     * @return all the city people added together
+     */
+    private long addUpCities(List<PopulationBreakdown> lines) {
+        long total = 0;
+        for (PopulationBreakdown line : lines) {
+            total += line.getCityPopulation();
+        }
+        return total;
+    }
+
+    /**
+     * Everyone living in a city in the whole database is 1,429,559,884.
+     * Continents, regions and countries should each add up to exactly that.
+     * If a city got counted twice (or missed) this would fail.
+     */
+    @Test
+    void cityPeopleAddUpForEverything() {
+        long allCityPeople = 1429559884L;
+
+        assertEquals(allCityPeople, addUpCities(continents));
+        assertEquals(allCityPeople, addUpCities(regions));
+        assertEquals(allCityPeople, addUpCities(countries));
+    }
+
+    /**
+     * The breakdown and the population lookup (UC5) should agree on every continent's total.
+     */
+    @Test
+    void breakdownAgreesWithTheLookup() {
+        PopulationReport lookup = new PopulationReport(con.getConnection());
+
+        for (PopulationBreakdown continent : continents) {
+            List<Population> answers = lookup.getPopulation("continent", continent.getName());
+
+            assertEquals(1, answers.size(), continent.getName());
+            assertEquals(answers.get(0).getTotalPopulation(), continent.getTotalPopulation(), continent.getName());
+        }
+    }
+
+    /**
+     * Continents, regions and countries should each add up to the world.
+     * (If the cities were joined on wrong, people would get counted twice and this would fail.)
+     */
+    @Test
+    void everythingAddsUpToTheWorld() {
+        assertEquals(WORLD, addUpTotals(continents));
+        assertEquals(WORLD, addUpTotals(regions));
+        assertEquals(WORLD, addUpTotals(countries));
+    }
+
+    /**
+     * Checks every single line in all three breakdowns makes sense.
+     */
+    @Test
+    void everyLineMakesSense() {
+        checkLines(continents);
+        checkLines(regions);
+        checkLines(countries);
+    }
+
+    /**
+     * Checks every line in a list: it has a name, the total isn't minus,
+     * city + non-city gives the total, and the percentages add up to 100
+     * (or 0 if nobody lives there).
+     *
+     * @param lines the list to check
+     */
+    private void checkLines(List<PopulationBreakdown> lines) {
+        for (PopulationBreakdown line : lines) {
+            String name = line.getName();
+
+            assertNotNull(name);
+            assertFalse(name.isEmpty());
+            assertTrue(line.getTotalPopulation() >= 0, name);
+
+            assertEquals(line.getTotalPopulation(),
+                    line.getCityPopulation() + line.getNonCityPopulation(),
+                    name + " should add up");
+
+            double percentages = line.getCityPercentage() + line.getNonCityPercentage();
+            if (line.getTotalPopulation() == 0) {
+                assertEquals(0.0, percentages, CLOSE_ENOUGH, name);
             } else {
-                assertEquals(100.0, sum, DELTA, row.getName());
+                assertEquals(100.0, percentages, CLOSE_ENOUGH, name);
             }
-        }
-    }
-
-    // Every row has a name and no row has a negative total.
-    @Test
-    void everyRowHasANameAndAValidTotal() {
-        // step 1: go through every row in all three breakdowns
-        // step 2: check each row has a name and a total that is not negative
-        for (PopulationBreakdown row : report.getCountryBreakdown()) {
-            assertNotNull(row.getName());
-            assertFalse(row.getName().isEmpty());
-            assertTrue(row.getTotalPopulation() >= 0);
         }
     }
 }

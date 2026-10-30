@@ -8,85 +8,111 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * UC4 - the population breakdown report.
- * For every continent, region or country it gets:
- *  - the name
- *  - the total population
- *  - the population living in cities (and the %)
- *  - the population not living in cities (and the %)
+ * The population breakdown report (UC4).
+ * <p>
+ * For every continent, region or country it gets the total number of people
+ * and how many of them live in cities. The PopulationBreakdown class works out the rest.
+ * <p>
+ * About the SQL: if we joined country straight onto city, each country would show up once
+ * for every city it has and its population would get added up loads of times.
+ * So we add up the cities for each country first (the bit in brackets) and join that on instead.
+ * LEFT JOIN keeps countries with no cities, and COALESCE turns their missing number into 0.
  */
 public class PopulationBreakdownReport {
 
-    // the connection to the database (we are given this when the class is made)
+    /** The link to the database. If it's null we can't get anything. */
     private Connection con;
 
+    /**
+     * Makes a new breakdown report.
+     *
+     * @param con the database connection (null means no database)
+     */
     public PopulationBreakdownReport(Connection con) {
         this.con = con;
     }
 
-    // One row for every continent.
+    /**
+     * Gets one line for every continent, in A to Z order.
+     * <p>
+     * Continent is stored as an ENUM which MySQL sorts in its own order, not A to Z.
+     * CAST(... AS CHAR) turns it into normal text so it sorts properly.
+     *
+     * @return the continent lines (empty if there's no database)
+     */
     public List<PopulationBreakdown> getContinentBreakdown() {
-        return getBreakdown("country.Continent", "country.Continent");
-    }
-
-    // One row for every region.
-    public List<PopulationBreakdown> getRegionBreakdown() {
-        return getBreakdown("country.Region", "country.Region");
-    }
-
-    // One row for every country.
-    // We group by the code as well as the name so two countries can never get mixed up.
-    public List<PopulationBreakdown> getCountryBreakdown() {
-        return getBreakdown("country.Name", "country.Code, country.Name");
+        String sql = "SELECT CAST(country.Continent AS CHAR) AS PlaceName, "
+                + "SUM(country.Population) AS Total, "
+                + "COALESCE(SUM(cities.CityPeople), 0) AS InCities "
+                + "FROM country "
+                + "LEFT JOIN (SELECT CountryCode, SUM(Population) AS CityPeople "
+                + "FROM city GROUP BY CountryCode) AS cities "
+                + "ON cities.CountryCode = country.Code "
+                + "GROUP BY country.Continent "
+                + "ORDER BY PlaceName";
+        return runReport(sql);
     }
 
     /**
-     * Does the real work for all three breakdowns.
-     * nameColumn   = the column to show as the name (continent, region or country name)
-     * groupColumns = the column(s) to group the countries by
+     * Gets one line for every region, in A to Z order.
      *
-     * These two texts are written by us above (the user never types them),
-     * so it is safe to join them into the SQL.
-     *
-     * Why the sub query?
-     * If we joined the country table straight to the city table, each country row
-     * would be repeated once for every city, and the country total would be counted
-     * too many times. So first we add up the cities for each country (the sub query),
-     * and then we join that one number to the country.
+     * @return the region lines (empty if there's no database)
      */
-    private List<PopulationBreakdown> getBreakdown(String nameColumn, String groupColumns) {
-        List<PopulationBreakdown> rows = new ArrayList<PopulationBreakdown>();
+    public List<PopulationBreakdown> getRegionBreakdown() {
+        String sql = "SELECT country.Region AS PlaceName, "
+                + "SUM(country.Population) AS Total, "
+                + "COALESCE(SUM(cities.CityPeople), 0) AS InCities "
+                + "FROM country "
+                + "LEFT JOIN (SELECT CountryCode, SUM(Population) AS CityPeople "
+                + "FROM city GROUP BY CountryCode) AS cities "
+                + "ON cities.CountryCode = country.Code "
+                + "GROUP BY country.Region "
+                + "ORDER BY PlaceName";
+        return runReport(sql);
+    }
 
-        // if there is no connection we can not ask the database anything
+    /**
+     * Gets one line for every country, in A to Z order.
+     * We group by the code as well so two countries can never get mixed up.
+     *
+     * @return the country lines (empty if there's no database)
+     */
+    public List<PopulationBreakdown> getCountryBreakdown() {
+        String sql = "SELECT country.Name AS PlaceName, "
+                + "SUM(country.Population) AS Total, "
+                + "COALESCE(SUM(cities.CityPeople), 0) AS InCities "
+                + "FROM country "
+                + "LEFT JOIN (SELECT CountryCode, SUM(Population) AS CityPeople "
+                + "FROM city GROUP BY CountryCode) AS cities "
+                + "ON cities.CountryCode = country.Code "
+                + "GROUP BY country.Code, country.Name "
+                + "ORDER BY PlaceName";
+        return runReport(sql);
+    }
+
+    /**
+     * Runs one of the SQL queries above and turns each row into a PopulationBreakdown.
+     *
+     * @param sql the SQL to run
+     * @return one line for each place
+     */
+    private List<PopulationBreakdown> runReport(String sql) {
+        List<PopulationBreakdown> lines = new ArrayList<PopulationBreakdown>();
+
         if (con == null) {
             System.out.println("No database connection");
-            return rows;
+            return lines;
         }
-
-        // Continent is an ENUM in the database, and MySQL sorts an ENUM by its position in the
-        // list (Asia, Europe, North America, ...) and not by the alphabet. CAST(... AS CHAR)
-        // turns the name into plain text first, so ORDER BY puts the names in A to Z order.
-        // The column is called AreaName so it can not be mixed up with country.Name.
-        String sql = "SELECT CAST(" + nameColumn + " AS CHAR) AS AreaName, "
-                + "SUM(country.Population) AS Total, "
-                + "COALESCE(SUM(cityTotals.CityPopulation), 0) AS InCities "
-                + "FROM country "
-                + "LEFT JOIN (SELECT CountryCode, SUM(Population) AS CityPopulation "
-                + "           FROM city GROUP BY CountryCode) AS cityTotals "
-                + "ON cityTotals.CountryCode = country.Code "
-                + "GROUP BY " + groupColumns + " "
-                + "ORDER BY AreaName";
 
         try {
             PreparedStatement stmt = con.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
 
-            // go through each row that came back
             while (rs.next()) {
-                String name = rs.getString("AreaName");
+                String name = rs.getString("PlaceName");
                 long total = rs.getLong("Total");
                 long inCities = rs.getLong("InCities");
-                rows.add(new PopulationBreakdown(name, total, inCities));
+                lines.add(new PopulationBreakdown(name, total, inCities));
             }
 
             rs.close();
@@ -94,6 +120,7 @@ public class PopulationBreakdownReport {
         } catch (SQLException e) {
             System.out.println("Could not get population breakdown: " + e.getMessage());
         }
-        return rows;
+
+        return lines;
     }
 }
