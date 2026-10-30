@@ -37,7 +37,10 @@ public class App {
         Properties input = new Properties();
         try (InputStream in = App.class.getResourceAsStream("/input.txt")) {
             input.load(in);
-        } catch (IOException | NullPointerException e) {
+        }
+
+        catch (IOException | NullPointerException e) {
+            // if it fails to load the file, disconnect and stop
             System.out.println("Couldn't load input.txt");
             con.disconnect();
             return;
