@@ -47,6 +47,8 @@ public class CountryReportPrintTest {
     // A missing list (null) prints the title and "No countries found."
     @Test
     void nullListSaysNoCountriesFound() {
+        // step 1: print a report using a list that is null (no list at all)
+        // step 2: check it printed the title and the words "No countries found."
         String text = printed("Null list", null);
 
         assertTrue(text.contains("Null list"));
@@ -56,6 +58,8 @@ public class CountryReportPrintTest {
     // An empty list prints "No countries found." and no table header.
     @Test
     void emptyListSaysNoCountriesFound() {
+        // step 1: print a report using a list with nothing in it
+        // step 2: check it says "No countries found." and does not print the table headings
         String text = printed("Empty list", new ArrayList<Country>());
 
         assertTrue(text.contains("Empty list"));
@@ -66,6 +70,9 @@ public class CountryReportPrintTest {
     // A normal list prints the title, the column names and the country.
     @Test
     void normalListShowsTitleHeaderAndRow() {
+        // step 1: make a list with one country (the UK) and print it
+        // step 2: check the title, every column heading, the country name and the capital are in the text
+        // step 3: check it does NOT say "No countries found."
         List<Country> countries = new ArrayList<Country>();
         countries.add(uk());
 
@@ -85,6 +92,8 @@ public class CountryReportPrintTest {
     // The table has a line of dashes under the header.
     @Test
     void tableHasALineUnderTheHeader() {
+        // step 1: print a list with one country
+        // step 2: check there is a line of dashes (-----) under the headings
         List<Country> countries = new ArrayList<Country>();
         countries.add(uk());
 
@@ -94,6 +103,8 @@ public class CountryReportPrintTest {
     // The countries are printed in the same order as the list.
     @Test
     void countriesAreInTheOrderOfTheList() {
+        // step 1: make a list with the UK first and France second, then print it
+        // step 2: check the UK comes before France in the text, so the order was not changed
         List<Country> countries = new ArrayList<Country>();
         countries.add(uk());
         countries.add(france());
@@ -106,6 +117,9 @@ public class CountryReportPrintTest {
     // A missing country in the list is skipped, and the real country is still printed once.
     @Test
     void nullCountryIsSkippedButTheRestIsPrinted() {
+        // step 1: make a list with a null country first and the UK second, then print it
+        // step 2: check it did not crash and the UK is printed
+        // step 3: check the UK is only printed once (the null did not cause a double print)
         List<Country> countries = new ArrayList<Country>();
         countries.add(null);
         countries.add(uk());
@@ -119,6 +133,8 @@ public class CountryReportPrintTest {
     // A country without a capital shows N/A instead of "null".
     @Test
     void countryWithoutCapitalShowsNA() {
+        // step 1: make Antarctica, which has no capital, and print it
+        // step 2: check it shows N/A and does not show the word null
         List<Country> countries = new ArrayList<Country>();
         countries.add(new Country("ATA", "Antarctica", "Antarctica", "Antarctica", 0, null, null));
 
@@ -132,6 +148,9 @@ public class CountryReportPrintTest {
     // than the title, the header and the line of dashes.
     @Test
     void oneLinePerCountry() {
+        // step 1: print a list with 1 country and count the lines
+        // step 2: print a list with 2 countries and count the lines
+        // step 3: check the second one has exactly 1 more line (one line per country)
         List<Country> one = new ArrayList<Country>();
         one.add(uk());
         List<Country> two = new ArrayList<Country>();

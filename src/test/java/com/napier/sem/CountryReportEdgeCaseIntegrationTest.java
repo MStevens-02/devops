@@ -54,6 +54,8 @@ public class CountryReportEdgeCaseIntegrationTest {
     // Top N in a continent refuses 0 and negative numbers.
     @Test
     void topNContinentRejectsZeroAndNegativeN() {
+        // step 1: ask for the top 0 and the top -1 countries in Asia
+        // step 2: check both give an error (IllegalArgumentException)
         assertThrows(IllegalArgumentException.class, () -> report.getTopCountriesByContinent("Asia", 0));
         assertThrows(IllegalArgumentException.class, () -> report.getTopCountriesByContinent("Asia", -1));
     }
@@ -61,6 +63,8 @@ public class CountryReportEdgeCaseIntegrationTest {
     // Top N in a region refuses 0 and negative numbers.
     @Test
     void topNRegionRejectsZeroAndNegativeN() {
+        // step 1: ask for the top 0 and the top -1 countries in the Caribbean
+        // step 2: check both give an error (IllegalArgumentException)
         assertThrows(IllegalArgumentException.class, () -> report.getTopCountriesByRegion("Caribbean", 0));
         assertThrows(IllegalArgumentException.class, () -> report.getTopCountriesByRegion("Caribbean", -1));
     }
@@ -68,6 +72,8 @@ public class CountryReportEdgeCaseIntegrationTest {
     // The error message says what was wrong.
     @Test
     void badNErrorMessageShowsTheNumber() {
+        // step 1: ask for the top -7 countries and catch the error
+        // step 2: check the error message has -7 in it, so the user can see what they typed
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
                 () -> report.getTopCountries(-7));
 
@@ -79,6 +85,8 @@ public class CountryReportEdgeCaseIntegrationTest {
     // Asking for the top 1 gives exactly one row in every top N report.
     @Test
     void topOneGivesExactlyOneRow() {
+        // step 1: ask for the top 1 in the world, in Asia and in Western Europe
+        // step 2: check each one gives exactly 1 row
         assertEquals(1, report.getTopCountries(1).size());
         assertEquals(1, report.getTopCountriesByContinent("Asia", 1).size());
         assertEquals(1, report.getTopCountriesByRegion("Western Europe", 1).size());
@@ -87,6 +95,8 @@ public class CountryReportEdgeCaseIntegrationTest {
     // The biggest country in the world is China.
     @Test
     void topOneInTheWorldIsChina() {
+        // step 1: ask for the top 1 country in the world
+        // step 2: check it is China (CHN)
         assertEquals("CHN", report.getTopCountries(1).get(0).getCode());
     }
 
@@ -96,6 +106,9 @@ public class CountryReportEdgeCaseIntegrationTest {
     // as the first 10 rows of the full world report.
     @Test
     void topTenIsTheStartOfTheWorldReport() {
+        // step 1: get the full world report and keep the first 10 countries
+        // step 2: get the top 10 report
+        // step 3: check the two lists have the same countries in the same order
         List<Country> all = report.getAllCountries();
 
         assertEquals(codes(all.subList(0, 10)), codes(report.getTopCountries(10)));
@@ -104,6 +117,9 @@ public class CountryReportEdgeCaseIntegrationTest {
     // The same check for a continent.
     @Test
     void topNContinentIsTheStartOfTheContinentReport() {
+        // step 1: get the full Asia report and keep the first 5 countries
+        // step 2: get the top 5 in Asia
+        // step 3: check the two lists are the same
         List<Country> all = report.getCountriesByContinent("Asia");
 
         assertEquals(codes(all.subList(0, 5)), codes(report.getTopCountriesByContinent("Asia", 5)));
@@ -112,6 +128,9 @@ public class CountryReportEdgeCaseIntegrationTest {
     // The same check for a region.
     @Test
     void topNRegionIsTheStartOfTheRegionReport() {
+        // step 1: get the full Western Europe report and keep the first 3 countries
+        // step 2: get the top 3 in Western Europe
+        // step 3: check the two lists are the same
         List<Country> all = report.getCountriesByRegion("Western Europe");
 
         assertEquals(codes(all.subList(0, 3)), codes(report.getTopCountriesByRegion("Western Europe", 3)));
@@ -122,12 +141,16 @@ public class CountryReportEdgeCaseIntegrationTest {
     // The five biggest countries in Asia.
     @Test
     void topFiveInAsiaAreCorrect() {
+        // step 1: get the top 5 in Asia
+        // step 2: check they are China, India, Indonesia, Pakistan and Bangladesh in that order
         assertEquals("CHN IND IDN PAK BGD", codes(report.getTopCountriesByContinent("Asia", 5)));
     }
 
     // The three biggest countries in Western Europe.
     @Test
     void topThreeInWesternEuropeAreCorrect() {
+        // step 1: get the top 3 in Western Europe
+        // step 2: check they are Germany, France and the Netherlands in that order
         assertEquals("DEU FRA NLD", codes(report.getTopCountriesByRegion("Western Europe", 3)));
     }
 
@@ -137,6 +160,9 @@ public class CountryReportEdgeCaseIntegrationTest {
     // they are sorted by name, so the end of the world report is always in the same order.
     @Test
     void countriesWithNoPeopleAreSortedByName() {
+        // step 1: get the world report and keep the last 7 countries
+        // step 2: these 7 all have 0 people, so they should be in A to Z order
+        // step 3: check each one has 0 people and is the name we expect in that position
         List<Country> all = report.getAllCountries();
         List<Country> lastSeven = all.subList(all.size() - 7, all.size());
 
@@ -153,6 +179,8 @@ public class CountryReportEdgeCaseIntegrationTest {
     // The report gives the same order every time it is run.
     @Test
     void sameReportTwiceGivesTheSameOrder() {
+        // step 1: get the world report two times
+        // step 2: check both times the countries are in exactly the same order
         assertEquals(codes(report.getAllCountries()), codes(report.getAllCountries()));
     }
 
@@ -161,6 +189,8 @@ public class CountryReportEdgeCaseIntegrationTest {
     // The country counts of the 7 continents add up to the 239 countries in the world.
     @Test
     void continentReportsAddUpToEveryCountry() {
+        // step 1: add up how many countries are in each of the 7 continents
+        // step 2: check the total is 239 (every country is in exactly one continent)
         String[] continents = {"Africa", "Antarctica", "Asia", "Europe",
                 "North America", "Oceania", "South America"};
 
@@ -175,6 +205,8 @@ public class CountryReportEdgeCaseIntegrationTest {
     // Check the size of two continents.
     @Test
     void continentSizesAreCorrect() {
+        // step 1: count the countries in Africa, Asia and Antarctica
+        // step 2: check the numbers are 58, 51 and 5
         assertEquals(58, report.getCountriesByContinent("Africa").size());
         assertEquals(51, report.getCountriesByContinent("Asia").size());
         assertEquals(5, report.getCountriesByContinent("Antarctica").size());
@@ -185,6 +217,8 @@ public class CountryReportEdgeCaseIntegrationTest {
     // A null or blank continent gives an empty list, not an error.
     @Test
     void nullOrBlankContinentGivesEmptyList() {
+        // step 1: ask for the countries in a continent that is null, empty or only spaces
+        // step 2: check each one gives an empty list and does not crash
         assertTrue(report.getCountriesByContinent(null).isEmpty());
         assertTrue(report.getCountriesByContinent("").isEmpty());
         assertTrue(report.getCountriesByContinent("   ").isEmpty());
@@ -193,6 +227,8 @@ public class CountryReportEdgeCaseIntegrationTest {
     // A null or blank region gives an empty list, not an error.
     @Test
     void nullOrBlankRegionGivesEmptyList() {
+        // step 1: ask for the countries in a region that is null, empty or only spaces
+        // step 2: check each one gives an empty list and does not crash
         assertTrue(report.getCountriesByRegion(null).isEmpty());
         assertTrue(report.getCountriesByRegion("").isEmpty());
         assertTrue(report.getCountriesByRegion("   ").isEmpty());
@@ -201,6 +237,8 @@ public class CountryReportEdgeCaseIntegrationTest {
     // The same for the top N reports.
     @Test
     void topNWithUnknownAreaGivesEmptyList() {
+        // step 1: ask for the top 5 in a continent and a region that do not exist
+        // step 2: check both give an empty list and not an error
         assertTrue(report.getTopCountriesByContinent("Atlantis", 5).isEmpty());
         assertTrue(report.getTopCountriesByRegion("Middle Earth", 5).isEmpty());
     }
@@ -208,6 +246,8 @@ public class CountryReportEdgeCaseIntegrationTest {
     // The ? in the SQL stops SQL injection, so this trick must find nothing.
     @Test
     void sqlInjectionDoesNotWork() {
+        // step 1: type a nasty bit of SQL (' OR '1'='1) in as the continent and the region
+        // step 2: check we get an empty list, so the SQL was not run and all countries were not returned
         assertTrue(report.getCountriesByContinent("Europe' OR '1'='1").isEmpty());
         assertTrue(report.getCountriesByRegion("Caribbean' OR '1'='1").isEmpty());
     }
