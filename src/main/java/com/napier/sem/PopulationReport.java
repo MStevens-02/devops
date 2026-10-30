@@ -56,7 +56,7 @@ public class PopulationReport {
         } else if (type.equals("country")) {
             return getAreaPopulation("SELECT Population AS Total FROM country WHERE Name = ?", name.trim());
         } else if (type.equals("district")) {
-            return getAreaPopulation("SELECT SUM(Population) AS Total FROM city WHERE District = ?", name.trim());
+            return getDistrictPopulation(name.trim());
         } else if (type.equals("city")) {
             return getCityPopulation(name.trim());
         } else {
@@ -83,7 +83,7 @@ public class PopulationReport {
     }
 
     /**
-     * Used for continent, region, country and district.
+     * Used for continent, region and country.
      * They all give back ONE number called Total, so one method can do them all.
      * The ? in the query is a gap that is filled with the name the user typed.
      * This is safer than joining the text on, because it stops SQL injection.
@@ -114,6 +114,36 @@ public class PopulationReport {
             stmt.close();
         } catch (SQLException e) {
             System.out.println("Could not get population: " + e.getMessage());
+        }
+        return answers;
+    }
+
+    // District: some districts share a name (for example there is a "Central" district
+    // in 7 different countries). Adding them all together would give a number that means
+    // nothing, so we add up the cities of each country separately and give one answer
+    // for each country, for example "Scotland, United Kingdom".
+    private List<Population> getDistrictPopulation(String districtName) {
+        List<Population> answers = new ArrayList<Population>();
+        String sql = "SELECT city.District, country.Name AS Country, SUM(city.Population) AS Total "
+                + "FROM city JOIN country ON city.CountryCode = country.Code "
+                + "WHERE city.District = ? "
+                + "GROUP BY country.Code, country.Name, city.District "
+                + "ORDER BY country.Name";
+        try {
+            PreparedStatement stmt = con.prepareStatement(sql);
+            stmt.setString(1, districtName);
+            ResultSet rs = stmt.executeQuery();
+
+            // go through each row that came back (one row for each country)
+            while (rs.next()) {
+                String label = rs.getString("District") + ", " + rs.getString("Country");
+                answers.add(new Population(label, rs.getLong("Total")));
+            }
+
+            rs.close();
+            stmt.close();
+        } catch (SQLException e) {
+            System.out.println("Could not get district population: " + e.getMessage());
         }
         return answers;
     }

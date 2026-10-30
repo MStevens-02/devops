@@ -63,7 +63,11 @@ public class PopulationBreakdownReport {
             return rows;
         }
 
-        String sql = "SELECT " + nameColumn + " AS Name, "
+        // Continent is an ENUM in the database, and MySQL sorts an ENUM by its position in the
+        // list (Asia, Europe, North America, ...) and not by the alphabet. CAST(... AS CHAR)
+        // turns the name into plain text first, so ORDER BY puts the names in A to Z order.
+        // The column is called AreaName so it can not be mixed up with country.Name.
+        String sql = "SELECT CAST(" + nameColumn + " AS CHAR) AS AreaName, "
                 + "SUM(country.Population) AS Total, "
                 + "COALESCE(SUM(cityTotals.CityPopulation), 0) AS InCities "
                 + "FROM country "
@@ -71,7 +75,7 @@ public class PopulationBreakdownReport {
                 + "           FROM city GROUP BY CountryCode) AS cityTotals "
                 + "ON cityTotals.CountryCode = country.Code "
                 + "GROUP BY " + groupColumns + " "
-                + "ORDER BY Name";
+                + "ORDER BY AreaName";
 
         try {
             PreparedStatement stmt = con.prepareStatement(sql);
@@ -79,7 +83,7 @@ public class PopulationBreakdownReport {
 
             // go through each row that came back
             while (rs.next()) {
-                String name = rs.getString("Name");
+                String name = rs.getString("AreaName");
                 long total = rs.getLong("Total");
                 long inCities = rs.getLong("InCities");
                 rows.add(new PopulationBreakdown(name, total, inCities));
