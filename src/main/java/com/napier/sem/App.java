@@ -32,7 +32,8 @@ public class App {
             System.out.println("Query failed: " + e.getMessage());
         }
 
-        // Load the user inputs from input.txt
+        // Create a way to read in the user input.txt file take in the inputs and return all listed
+        // Create a variable called input
         Properties input = new Properties();
         try (InputStream in = App.class.getResourceAsStream("/input.txt")) {
             input.load(in);
