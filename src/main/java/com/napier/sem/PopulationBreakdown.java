@@ -1,51 +1,84 @@
 package com.napier.sem;
 
 /**
- * Holds one row of the population breakdown report (UC4).
- * For example: Asia, total 3,705,025,700, 697,604,103 live in cities (18.83%),
- * and the rest do not live in cities.
+ * One line of the population breakdown report (UC4).
+ * <p>
+ * For a place (a continent, a region or a country) it holds:
+ * how many people live there in total, and how many of them live in cities.
+ * From those two numbers we can work out everything else, like how many people
+ * DON'T live in cities and what the percentages are.
+ * <p>
+ * Example: Asia has 3,705,025,700 people and 697,604,103 of them live in cities,
+ * so that's about 18.83% in cities and 81.17% not in cities.
  */
 public class PopulationBreakdown {
 
-    // the continent, region or country name
+    /** The name of the place, like "Asia". */
     private String name;
 
-    // everyone who lives there
+    /** Everyone who lives there. */
     private long totalPopulation;
 
-    // the people who live in cities
+    /** Just the people who live in cities. */
     private long cityPopulation;
 
-    // The constructor runs when we write "new PopulationBreakdown(...)".
+    /**
+     * Makes a new line for the report.
+     *
+     * @param name            the name of the place (can't be empty)
+     * @param totalPopulation everyone who lives there (can't be below 0)
+     * @param cityPopulation  the people living in cities (can't be below 0)
+     */
     public PopulationBreakdown(String name, long totalPopulation, long cityPopulation) {
         setName(name);
         setTotalPopulation(totalPopulation);
         setCityPopulation(cityPopulation);
     }
 
-    // ----- getters -----
-
+    /**
+     * Gets the name of the place.
+     *
+     * @return the name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Gets the total number of people.
+     *
+     * @return everyone who lives there
+     */
     public long getTotalPopulation() {
         return totalPopulation;
     }
 
+    /**
+     * Gets the number of people living in cities.
+     *
+     * @return the city people
+     */
     public long getCityPopulation() {
         return cityPopulation;
     }
 
-    // ----- setters (they check the value is okay) -----
-
+    /**
+     * Changes the name. Throws an error if it's null or just spaces.
+     *
+     * @param name the new name
+     */
     public void setName(String name) {
-        if (name == null || name.trim().isEmpty()) {
+        if (name == null || name.trim().length() == 0) {
             throw new IllegalArgumentException("Name must not be blank");
         }
         this.name = name.trim();
     }
 
+    /**
+     * Changes the total number of people. Throws an error if it's a minus number.
+     *
+     * @param totalPopulation the new total
+     */
     public void setTotalPopulation(long totalPopulation) {
         if (totalPopulation < 0) {
             throw new IllegalArgumentException("Total population must not be negative");
@@ -53,6 +86,11 @@ public class PopulationBreakdown {
         this.totalPopulation = totalPopulation;
     }
 
+    /**
+     * Changes the number of city people. Throws an error if it's a minus number.
+     *
+     * @param cityPopulation the new number of city people
+     */
     public void setCityPopulation(long cityPopulation) {
         if (cityPopulation < 0) {
             throw new IllegalArgumentException("City population must not be negative");
@@ -60,50 +98,72 @@ public class PopulationBreakdown {
         this.cityPopulation = cityPopulation;
     }
 
-    // ----- numbers worked out from the ones above -----
-
-    // People not living in cities = everyone minus the city people.
+    /**
+     * Works out how many people DON'T live in cities. It's just everyone minus the city people.
+     *
+     * @return the people not living in cities
+     */
     public long getNonCityPopulation() {
         return totalPopulation - cityPopulation;
     }
 
-    // Percentage of people living in cities.
+    /**
+     * Works out what percent of people live in cities.
+     *
+     * @return the city percentage (0 to 100)
+     */
     public double getCityPercentage() {
-        return getPercentage(cityPopulation);
-    }
-
-    // Percentage of people not living in cities.
-    public double getNonCityPercentage() {
-        return getPercentage(getNonCityPopulation());
-    }
-
-    // Works out part / total * 100.
-    // If the total is 0 we give back 0, because dividing by 0 would cause an error.
-    private double getPercentage(long part) {
+        // if nobody lives there we just say 0%, because dividing by 0 breaks things
         if (totalPopulation == 0) {
             return 0.0;
         }
-        return part * 100.0 / totalPopulation;
+        return (double) cityPopulation / totalPopulation * 100;
     }
 
-    // A few countries in the world database have more city people than the country total.
-    // That makes the non-city number negative, so we flag it in the output.
+    /**
+     * Works out what percent of people DON'T live in cities.
+     *
+     * @return the non-city percentage (0 to 100)
+     */
+    public double getNonCityPercentage() {
+        if (totalPopulation == 0) {
+            return 0.0;
+        }
+        return (double) getNonCityPopulation() / totalPopulation * 100;
+    }
+
+    /**
+     * Checks if the numbers don't make sense. A few countries in the database
+     * (like Singapore) somehow have more city people than people in the whole country.
+     * That's a mistake in the data, not in our code, so we just point it out.
+     *
+     * @return true if there are more city people than total people
+     */
     public boolean isDataMismatch() {
-        return cityPopulation > totalPopulation;
+        if (cityPopulation > totalPopulation) {
+            return true;
+        }
+        return false;
     }
 
-    // The text for one line of the report.
-    // %-30s = text, left aligned, 30 characters wide.
-    // %,15d = whole number with commas, 15 characters wide.
-    // %6.2f = number with 2 decimal places.   %% = a percent sign.
+    /**
+     * Makes the line of text that gets printed in the report.
+     * The numbers in the format (like 30 and 15) are how wide each column is,
+     * so everything lines up nicely. %% just prints a % sign.
+     *
+     * @return one line of the report
+     */
     @Override
     public String toString() {
         String line = String.format("%-30s %,15d %,15d (%6.2f%%) %,15d (%6.2f%%)",
-                name, totalPopulation,
+                name,
+                totalPopulation,
                 cityPopulation, getCityPercentage(),
                 getNonCityPopulation(), getNonCityPercentage());
+
+        // stick a note on the end if the numbers are dodgy
         if (isDataMismatch()) {
-            line = line + "  * city total is bigger than country total";
+            line += "  * city total is bigger than country total";
         }
         return line;
     }

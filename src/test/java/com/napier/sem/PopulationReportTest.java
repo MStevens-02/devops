@@ -7,107 +7,104 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for PopulationReport and PopulationBreakdownReport.
+ * Tests for PopulationReport and PopulationBreakdownReport that DON'T need the database.
  * <p>
- * These tests do not need the database. We give the reports a null connection
- * (no database) and check that they check the input and do not crash.
- * The tests that use the real database are in the two integration test classes.
+ * We give both reports a null connection (so no database) and check that they still
+ * check what you type in properly, and don't crash. The tests that use the real
+ * database are in the two integration test classes.
  */
 public class PopulationReportTest {
 
-    // A report with no database connection.
+    /** The lookup with no database. */
     private PopulationReport lookup = new PopulationReport(null);
+
+    /** The breakdown report with no database. */
     private PopulationBreakdownReport breakdown = new PopulationBreakdownReport(null);
 
-    // Population lookup (UC5) - bad input
+    // ===== the lookup (UC5) =====
 
-    // A null type is not allowed.
+    /**
+     * A null, empty or just-spaces type should throw an error.
+     */
     @Test
-    void nullTypeIsRejected() {
-        // step 1: ask for a population with a null type
-        // step 2: check it gives an error
+    void saysNoToEmptyTypes() {
         assertThrows(IllegalArgumentException.class, () -> lookup.getPopulation(null, "France"));
-    }
-
-    // An empty type is not allowed.
-    @Test
-    void emptyTypeIsRejected() {
-        // step 1: ask for a population with an empty type
-        // step 2: check it gives an error
         assertThrows(IllegalArgumentException.class, () -> lookup.getPopulation("", "France"));
-    }
-
-    // A type with only spaces is not allowed.
-    @Test
-    void blankTypeIsRejected() {
-        // step 1: ask for a population with a type of only spaces
-        // step 2: check it gives an error
         assertThrows(IllegalArgumentException.class, () -> lookup.getPopulation("   ", "France"));
     }
 
-    // Every type except the world needs a name: null name.
+    /**
+     * A made up type like "planet" should throw an error, and the message should say what was wrong.
+     * This works even without a database because we check the type first.
+     */
     @Test
-    void nullNameIsRejectedForCountry() {
-        // step 1: ask for a country population with a null name
-        // step 2: check it gives an error
+    void saysNoToMadeUpTypes() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> lookup.getPopulation("planet", "Mars"));
+
+        assertTrue(e.getMessage().contains("planet"));
+    }
+
+    /**
+     * Every type apart from the world needs a name, so a null name should throw an error.
+     */
+    @Test
+    void saysNoToNullNames() {
         assertThrows(IllegalArgumentException.class, () -> lookup.getPopulation("country", null));
     }
 
-    // Every type except the world needs a name: blank name.
+    /**
+     * Goes through every type that needs a name and checks a blank name throws an error for each one.
+     */
     @Test
-    void blankNameIsRejectedForEveryTypeExceptWorld() {
-        // step 1: make a list of the types that need a name
-        // step 2: loop through them and ask for each one with a blank name
-        // step 3: check every single one gives an error
+    void saysNoToBlankNamesForEveryType() {
         String[] types = {"continent", "region", "country", "district", "city"};
 
-        for (String type : types) {
+        for (int i = 0; i < types.length; i++) {
+            String type = types[i];
             assertThrows(IllegalArgumentException.class,
                     () -> lookup.getPopulation(type, "   "),
-                    "type " + type + " should need a name");
+                    type + " should need a name");
         }
     }
 
-    // Population lookup (UC5) - good input but no database
-
-    // The world does not need a name, so a null name must not cause an error.
+    /**
+     * The world doesn't need a name, so null should be fine (we just get nothing back
+     * because there's no database).
+     */
     @Test
-    void worldDoesNotNeedAName() {
-        // step 1: ask for the world population with a null name
-        // step 2: check there is no error (we only get an empty list because there is no database)
+    void worldIsFineWithNoName() {
         List<Population> answers = lookup.getPopulation("world", null);
-
         assertTrue(answers.isEmpty());
     }
 
-    // The type is cleaned (spaces removed, any capitals) so this must not throw.
+    /**
+     * Capitals and spaces in the type shouldn't matter.
+     */
     @Test
-    void typeIsCleanedBeforeUse() {
-        // step 1: ask using "  WORLD " (spaces and capitals)
-        // step 2: ask using " Country " with a name
-        // step 3: check neither one throws an error
+    void capitalsAndSpacesDontMatter() {
         assertDoesNotThrow(() -> lookup.getPopulation("  WORLD ", ""));
         assertDoesNotThrow(() -> lookup.getPopulation(" Country ", "France"));
     }
 
-    // With no database the lookup gives back an empty list, not null and not a crash.
+    /**
+     * With no database we should get an empty list back, not null and not a crash.
+     */
     @Test
-    void noConnectionGivesEmptyList() {
-        // step 1: ask for France with no database connection
-        // step 2: check we get an empty list, not null
+    void noDatabaseGivesEmptyList() {
         List<Population> answers = lookup.getPopulation("country", "France");
 
         assertNotNull(answers);
         assertTrue(answers.isEmpty());
     }
 
-    // Population breakdown (UC4) - no database
+    // ===== the breakdown (UC4) =====
 
-    // With no database every breakdown gives back an empty list, not null and not a crash.
+    /**
+     * With no database all three breakdowns should give back an empty list and not crash.
+     */
     @Test
-    void noConnectionGivesEmptyBreakdowns() {
-        // step 1: ask for the continent, region and country breakdowns with no database
-        // step 2: check all three give an empty list
+    void noDatabaseGivesEmptyBreakdowns() {
         assertTrue(breakdown.getContinentBreakdown().isEmpty());
         assertTrue(breakdown.getRegionBreakdown().isEmpty());
         assertTrue(breakdown.getCountryBreakdown().isEmpty());

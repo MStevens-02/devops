@@ -1,134 +1,123 @@
 package com.napier.sem;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for the Population class (UC5).
+ * Tests for the Population class (UC5).
  * <p>
- * These tests do not need the database.
- * They check that a Population keeps good data and refuses bad data.
+ * These don't need the database. They just check that a Population holds onto
+ * good data and says no to bad data.
  */
 public class PopulationTest {
 
-    // Good data
+    /** A normal Population for France that gets made fresh before every test. */
+    private Population france;
 
-    // A Population made with good data keeps both values.
-    @Test
-    void validPopulationKeepsAllValues() {
-        // step 1: make a Population for France with 59225700 people
-        // step 2: check the name and the number are the same as we put in
-        Population p = new Population("France", 59225700);
-
-        assertEquals("France", p.getName());
-        assertEquals(59225700, p.getTotalPopulation());
+    /**
+     * Makes a brand new France before each test, so one test can't mess up another one.
+     */
+    @BeforeEach
+    void makeFrance() {
+        france = new Population("France", 59225700);
     }
 
-    // Spaces around the name are removed.
+    /**
+     * Whatever we put in, we should get back out.
+     */
     @Test
-    void nameIsTrimmed() {
-        // step 1: make a Population with spaces around the name
-        // step 2: check the spaces were removed
+    void keepsTheNameAndNumber() {
+        assertEquals("France", france.getName());
+        assertEquals(59225700, france.getTotalPopulation());
+    }
+
+    /**
+     * Spaces at the start and end of the name should get chopped off.
+     */
+    @Test
+    void chopsOffSpacesAroundTheName() {
         Population p = new Population("  France  ", 59225700);
-
         assertEquals("France", p.getName());
     }
 
-    // A population of 0 is allowed (for example, Antarctica).
+    /**
+     * 0 people is fine (nobody lives in Antarctica).
+     */
     @Test
-    void zeroPopulationIsAllowed() {
-        // step 1: make a Population with 0 people
-        // step 2: check it was accepted and still says 0
+    void zeroPeopleIsFine() {
         Population p = new Population("Antarctica", 0);
-
         assertEquals(0, p.getTotalPopulation());
     }
 
-    // The world population is bigger than an int can hold, so it must be a long.
+    /**
+     * The world has about 6 billion people, which is too big for an int,
+     * so this checks the long actually holds it.
+     */
     @Test
-    void worldSizedNumberIsAllowed() {
-        // step 1: make a Population with the whole world number (6078749450)
-        // step 2: check the number was kept (it only fits in a long, not an int)
+    void canHoldTheWholeWorld() {
         Population p = new Population("World", 6078749450L);
-
         assertEquals(6078749450L, p.getTotalPopulation());
     }
 
-    // Bad data
-
-    // A null name is not allowed.
+    /**
+     * Null, empty and just-spaces names should all throw an error.
+     */
     @Test
-    void nullNameIsRejected() {
-        // step 1: try to make a Population with a null name
-        // step 2: check it gives an error (IllegalArgumentException)
+    void saysNoToEmptyNames() {
         assertThrows(IllegalArgumentException.class, () -> new Population(null, 100));
-    }
-
-    // An empty name is not allowed.
-    @Test
-    void emptyNameIsRejected() {
-        // step 1: try to make a Population with an empty name
-        // step 2: check it gives an error
         assertThrows(IllegalArgumentException.class, () -> new Population("", 100));
-    }
-
-    // A name with only spaces is not allowed.
-    @Test
-    void blankNameIsRejected() {
-        // step 1: try to make a Population with a name that is only spaces
-        // step 2: check it gives an error
         assertThrows(IllegalArgumentException.class, () -> new Population("   ", 100));
     }
 
-    // A negative population is not allowed.
+    /**
+     * You can't have minus people.
+     */
     @Test
-    void negativePopulationIsRejected() {
-        // step 1: try to make a Population with -1 people
-        // step 2: check it gives an error
+    void saysNoToMinusPeople() {
         assertThrows(IllegalArgumentException.class, () -> new Population("France", -1));
     }
 
-    // Setters
-
-    // The setters also refuse bad data after the object is made.
+    /**
+     * The setters should say no to bad data too, not just the constructor.
+     */
     @Test
-    void settersRejectBadData() {
-        // step 1: make a good Population
-        // step 2: try to set a blank name and check it gives an error
-        // step 3: try to set a negative population and check it gives an error
-        Population p = new Population("France", 100);
-
-        assertThrows(IllegalArgumentException.class, () -> p.setName(" "));
-        assertThrows(IllegalArgumentException.class, () -> p.setTotalPopulation(-5));
+    void settersSayNoToBadData() {
+        assertThrows(IllegalArgumentException.class, () -> france.setName(" "));
+        assertThrows(IllegalArgumentException.class, () -> france.setTotalPopulation(-5));
     }
 
-    // A failed setter must not change the value that was already there.
+    /**
+     * If a setter says no, the old values should still be there afterwards.
+     */
     @Test
-    void failedSetterKeepsOldValue() {
-        // step 1: make a Population with 100 people
-        // step 2: try to set -5 people and check it gives an error
-        // step 3: check the population is still 100
-        Population p = new Population("France", 100);
+    void badSetKeepsTheOldValues() {
+        assertThrows(IllegalArgumentException.class, () -> france.setTotalPopulation(-5));
+        assertThrows(IllegalArgumentException.class, () -> france.setName(""));
 
-        assertThrows(IllegalArgumentException.class, () -> p.setTotalPopulation(-5));
-
-        assertEquals(100, p.getTotalPopulation());
+        assertEquals(59225700, france.getTotalPopulation());
+        assertEquals("France", france.getName());
     }
 
-    // Text
-
-    // The text has the name and the population (with separators for big numbers).
+    /**
+     * The setters should actually change things when the data is fine.
+     */
     @Test
-    void toStringShowsNameAndPopulation() {
-        // step 1: make a Population and turn it into text
-        // step 2: check the text starts with the name and the words "has a population of"
-        // step 3: check the number is in the text with commas
-        Population p = new Population("France", 59225700);
+    void goodSetChangesTheValues() {
+        france.setName("Spain");
+        france.setTotalPopulation(39441700);
 
-        String text = p.toString();
+        assertEquals("Spain", france.getName());
+        assertEquals(39441700, france.getTotalPopulation());
+    }
 
-        assertTrue(text.startsWith("France has a population of"));
-        assertTrue(text.contains(String.format("%,d", 59225700L)));
+    /**
+     * The printed sentence should have the name and the number with commas in it.
+     */
+    @Test
+    void printsANiceSentence() {
+        String expected = "France has a population of " + String.format("%,d", 59225700L);
+        assertEquals(expected, france.toString());
     }
 }

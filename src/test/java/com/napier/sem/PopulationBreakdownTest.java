@@ -5,231 +5,235 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for the PopulationBreakdown class (UC4).
+ * Tests for the PopulationBreakdown class (UC4).
  * <p>
- * These tests do not need the database.
- * They check the maths (non-city people and the percentages)
- * and that bad data is refused.
+ * These don't need the database. They check the maths (people not in cities and the
+ * percentages) and that bad data gets turned away.
  */
 public class PopulationBreakdownTest {
 
-    // Percentages are doubles, so we allow a tiny difference when comparing them.
-    private static final double DELTA = 0.001;
+    /** Percentages are decimals, so we let them be off by a tiny tiny bit. */
+    private static final double CLOSE_ENOUGH = 0.001;
 
-    // Makes a simple row where exactly 25% live in cities.
-    private PopulationBreakdown quarterInCities() {
-        return new PopulationBreakdown("Testland", 1000, 250);
+    /** A made up place where exactly a quarter of the people live in cities. */
+    private PopulationBreakdown testland = new PopulationBreakdown("Testland", 1000, 250);
+
+    /** The real Asia numbers from the world database. */
+    private PopulationBreakdown asia = new PopulationBreakdown("Asia", 3705025700L, 697604103L);
+
+    /** Singapore has more city people than total people in the database, which is a data mistake. */
+    private PopulationBreakdown singapore = new PopulationBreakdown("Singapore", 3567000, 4017733);
+
+    // ===== holding the data =====
+
+    /**
+     * Whatever we put in, we should get back out.
+     */
+    @Test
+    void keepsAllTheValues() {
+        assertEquals("Testland", testland.getName());
+        assertEquals(1000, testland.getTotalPopulation());
+        assertEquals(250, testland.getCityPopulation());
     }
 
-    // Good data
-
-    // A row made with good data keeps every value.
+    /**
+     * Spaces around the name get chopped off.
+     */
     @Test
-    void validRowKeepsAllValues() {
-        // step 1: make a row (1000 people, 250 in cities)
-        // step 2: check the name and both numbers are the same as we put in
-        PopulationBreakdown row = quarterInCities();
-
-        assertEquals("Testland", row.getName());
-        assertEquals(1000, row.getTotalPopulation());
-        assertEquals(250, row.getCityPopulation());
-    }
-
-    // Spaces around the name are removed.
-    @Test
-    void nameIsTrimmed() {
-        // step 1: make a row with spaces around the name
-        // step 2: check the spaces were removed
+    void chopsOffSpacesAroundTheName() {
         PopulationBreakdown row = new PopulationBreakdown("  Asia ", 1000, 250);
-
         assertEquals("Asia", row.getName());
     }
 
-    // The maths
+    // ===== the maths =====
 
-    // Not in cities = total minus the city people.
+    /**
+     * 1000 people with 250 in cities means 750 not in cities, which is 25% and 75%.
+     */
     @Test
-    void nonCityPopulationIsTotalMinusCity() {
-        // step 1: use the row with 1000 total and 250 in cities
-        // step 2: check people not in cities is 1000 - 250 = 750
-        assertEquals(750, quarterInCities().getNonCityPopulation());
+    void quarterInCitiesMaths() {
+        assertEquals(750, testland.getNonCityPopulation());
+        assertEquals(25.0, testland.getCityPercentage(), CLOSE_ENOUGH);
+        assertEquals(75.0, testland.getNonCityPercentage(), CLOSE_ENOUGH);
     }
 
-    // 250 out of 1000 is 25%.
+    /**
+     * For Asia, the two people numbers should add back up to the total,
+     * and the two percentages should add up to 100.
+     */
     @Test
-    void cityPercentageIsWorkedOutCorrectly() {
-        // step 1: use the row with 1000 total and 250 in cities
-        // step 2: check the city percentage is 25
-        assertEquals(25.0, quarterInCities().getCityPercentage(), DELTA);
+    void asiaAddsUp() {
+        assertEquals(asia.getTotalPopulation(), asia.getCityPopulation() + asia.getNonCityPopulation());
+        assertEquals(100.0, asia.getCityPercentage() + asia.getNonCityPercentage(), CLOSE_ENOUGH);
     }
 
-    // 750 out of 1000 is 75%.
+    /**
+     * About 18.83% of people in Asia live in cities.
+     */
     @Test
-    void nonCityPercentageIsWorkedOutCorrectly() {
-        // step 1: use the row with 1000 total and 250 in cities
-        // step 2: check the non-city percentage is 75
-        assertEquals(75.0, quarterInCities().getNonCityPercentage(), DELTA);
-    }
-
-    // The two percentages add up to 100.
-    @Test
-    void percentagesAddUpTo100() {
-        // step 1: make a row using the Asia numbers
-        // step 2: add the two percentages together
-        // step 3: check the answer is 100
-        PopulationBreakdown row = new PopulationBreakdown("Asia", 3705025700L, 697604103L);
-
-        assertEquals(100.0, row.getCityPercentage() + row.getNonCityPercentage(), DELTA);
-    }
-
-    // City people plus non-city people give back the total.
-    @Test
-    void cityPlusNonCityEqualsTotal() {
-        // step 1: make a row using the Asia numbers
-        // step 2: add city people and non-city people together
-        // step 3: check it gives back the total
-        PopulationBreakdown row = new PopulationBreakdown("Asia", 3705025700L, 697604103L);
-
-        assertEquals(row.getTotalPopulation(), row.getCityPopulation() + row.getNonCityPopulation());
-    }
-
-    // The real Asia numbers from the world database give about 18.83%.
-    @Test
-    void realAsiaNumbersGiveExpectedPercentage() {
-        // step 1: make a row with the real Asia numbers from the database
-        // step 2: check the city percentage is about 18.83
-        PopulationBreakdown asia = new PopulationBreakdown("Asia", 3705025700L, 697604103L);
-
+    void asiaCityPercentIsRight() {
         assertEquals(18.83, asia.getCityPercentage(), 0.01);
     }
 
-    // Everyone lives in cities: 100% and 0%.
+    /**
+     * If everyone lives in cities it should be 100% and 0%.
+     */
     @Test
     void everyoneInCities() {
-        // step 1: make a row where all 500 people live in cities
-        // step 2: check city is 100%, non-city is 0% and 0 people are outside cities
         PopulationBreakdown row = new PopulationBreakdown("Citystate", 500, 500);
 
-        assertEquals(100.0, row.getCityPercentage(), DELTA);
-        assertEquals(0.0, row.getNonCityPercentage(), DELTA);
         assertEquals(0, row.getNonCityPopulation());
+        assertEquals(100.0, row.getCityPercentage(), CLOSE_ENOUGH);
+        assertEquals(0.0, row.getNonCityPercentage(), CLOSE_ENOUGH);
     }
 
-    // Nobody lives in cities: 0% and 100%.
+    /**
+     * If nobody lives in cities it should be 0% and 100%.
+     */
     @Test
     void nobodyInCities() {
-        // step 1: make a row where 0 of the 500 people live in cities
-        // step 2: check city is 0% and non-city is 100%
         PopulationBreakdown row = new PopulationBreakdown("Farmland", 500, 0);
 
-        assertEquals(0.0, row.getCityPercentage(), DELTA);
-        assertEquals(100.0, row.getNonCityPercentage(), DELTA);
+        assertEquals(0.0, row.getCityPercentage(), CLOSE_ENOUGH);
+        assertEquals(100.0, row.getNonCityPercentage(), CLOSE_ENOUGH);
     }
 
-    // A total of 0 (for example, Antarctica) must give 0% and must not divide by zero.
+    /**
+     * If nobody lives there at all we'd be dividing by 0, so it should just give 0% and not crash.
+     */
     @Test
-    void zeroTotalGivesZeroPercentWithoutError() {
-        // step 1: make a row with 0 total people (like Antarctica)
-        // step 2: check both percentages are 0 and nothing crashed (no dividing by zero)
-        PopulationBreakdown row = new PopulationBreakdown("Antarctica", 0, 0);
+    void nobodyAtAllDoesNotCrash() {
+        PopulationBreakdown antarctica = new PopulationBreakdown("Antarctica", 0, 0);
 
-        assertEquals(0.0, row.getCityPercentage(), DELTA);
-        assertEquals(0.0, row.getNonCityPercentage(), DELTA);
+        assertEquals(0.0, antarctica.getCityPercentage(), CLOSE_ENOUGH);
+        assertEquals(0.0, antarctica.getNonCityPercentage(), CLOSE_ENOUGH);
     }
 
-    // The data mismatch flag
+    // ===== dodgy data =====
 
-    // Normal data is not flagged.
+    /**
+     * Normal numbers, and numbers where city equals total, are both fine.
+     */
     @Test
-    void normalRowIsNotAMismatch() {
-        // step 1: use the normal row (250 of 1000)
-        // step 2: check it is not flagged as a mismatch
-        assertFalse(quarterInCities().isDataMismatch());
-    }
-
-    // Exactly equal numbers are not a mismatch.
-    @Test
-    void equalCityAndTotalIsNotAMismatch() {
-        // step 1: make a row where city people equal the total (500 and 500)
-        // step 2: check it is not flagged, because equal is fine
+    void normalNumbersAreNotDodgy() {
+        assertFalse(testland.isDataMismatch());
         assertFalse(new PopulationBreakdown("Citystate", 500, 500).isDataMismatch());
     }
 
-    // More city people than total people is flagged (this happens for Singapore in the database).
+    /**
+     * More city people than total people is dodgy, and the non-city number goes below 0.
+     */
     @Test
-    void moreCityPeopleThanTotalIsAMismatch() {
-        // step 1: make a row like Singapore where cities have MORE people than the country total
-        // step 2: check it is flagged as a mismatch
-        // step 3: check the non-city number is below 0
-        PopulationBreakdown singapore = new PopulationBreakdown("Singapore", 3567000, 4017733);
-
+    void singaporeIsDodgy() {
         assertTrue(singapore.isDataMismatch());
         assertTrue(singapore.getNonCityPopulation() < 0);
     }
 
-    // Bad data
+    // ===== bad data =====
 
-    // A null, empty or blank name is not allowed.
+    /**
+     * Null, empty and just-spaces names should all throw an error.
+     */
     @Test
-    void badNamesAreRejected() {
-        // step 1: try to make a row with a null name, an empty name and a blank name
-        // step 2: check each one gives an error
+    void saysNoToEmptyNames() {
         assertThrows(IllegalArgumentException.class, () -> new PopulationBreakdown(null, 100, 10));
         assertThrows(IllegalArgumentException.class, () -> new PopulationBreakdown("", 100, 10));
         assertThrows(IllegalArgumentException.class, () -> new PopulationBreakdown("   ", 100, 10));
     }
 
-    // A negative total is not allowed.
+    /**
+     * Minus numbers for either the total or the city people should throw an error.
+     */
     @Test
-    void negativeTotalIsRejected() {
-        // step 1: try to make a row with a total of -1
-        // step 2: check it gives an error
+    void saysNoToMinusNumbers() {
         assertThrows(IllegalArgumentException.class, () -> new PopulationBreakdown("Asia", -1, 0));
-    }
-
-    // A negative city population is not allowed.
-    @Test
-    void negativeCityPopulationIsRejected() {
-        // step 1: try to make a row with -1 city people
-        // step 2: check it gives an error
         assertThrows(IllegalArgumentException.class, () -> new PopulationBreakdown("Asia", 100, -1));
     }
 
-    // A failed setter must not change the value that was already there.
+    /**
+     * If a setter says no, the old values should still be there afterwards.
+     */
     @Test
-    void failedSetterKeepsOldValue() {
-        // step 1: make the normal row (total 1000)
-        // step 2: try to set the total to -5 and check it gives an error
-        // step 3: check the total is still 1000
-        PopulationBreakdown row = quarterInCities();
+    void badSetKeepsTheOldValues() {
+        assertThrows(IllegalArgumentException.class, () -> testland.setTotalPopulation(-5));
+        assertThrows(IllegalArgumentException.class, () -> testland.setCityPopulation(-5));
 
-        assertThrows(IllegalArgumentException.class, () -> row.setTotalPopulation(-5));
-
-        assertEquals(1000, row.getTotalPopulation());
+        assertEquals(1000, testland.getTotalPopulation());
+        assertEquals(250, testland.getCityPopulation());
     }
 
-    // Text
-
-    // The report line has the name, and percent signs for both percentages.
+    /**
+     * A bad name in the setter should keep the old name.
+     */
     @Test
-    void toStringShowsNameAndPercentages() {
-        // step 1: turn the normal row into text
-        // step 2: check the text has the name and a % sign
-        // step 3: check it has no * because it is not a mismatch
-        String line = quarterInCities().toString();
+    void badNameKeepsTheOldName() {
+        assertThrows(IllegalArgumentException.class, () -> testland.setName("  "));
+        assertEquals("Testland", testland.getName());
+    }
+
+    /**
+     * The setters should actually change things when the data is fine,
+     * and the maths should use the new numbers.
+     */
+    @Test
+    void goodSetChangesTheValues() {
+        testland.setName("Newland");
+        testland.setTotalPopulation(200);
+        testland.setCityPopulation(50);
+
+        assertEquals("Newland", testland.getName());
+        assertEquals(200, testland.getTotalPopulation());
+        assertEquals(50, testland.getCityPopulation());
+        assertEquals(150, testland.getNonCityPopulation());
+        assertEquals(25.0, testland.getCityPercentage(), CLOSE_ENOUGH);
+    }
+
+    /**
+     * Percentages that don't come out even (1 out of 3) should still work.
+     */
+    @Test
+    void oneThirdWorks() {
+        PopulationBreakdown row = new PopulationBreakdown("Thirdland", 3, 1);
+
+        assertEquals(33.333, row.getCityPercentage(), CLOSE_ENOUGH);
+        assertEquals(66.667, row.getNonCityPercentage(), CLOSE_ENOUGH);
+    }
+
+    // ===== printing =====
+
+    /**
+     * A normal line has the name and % signs, and no star because nothing's dodgy.
+     */
+    @Test
+    void normalLineLooksRight() {
+        String line = testland.toString();
 
         assertTrue(line.contains("Testland"));
         assertTrue(line.contains("%"));
         assertFalse(line.contains("*"));
+
+        // the numbers and percentages should be in there too
+        assertTrue(line.contains(String.format("%,d", 1000)));
+        assertTrue(line.contains(String.format("%.2f", 25.0)));
+        assertTrue(line.contains(String.format("%.2f", 75.0)));
     }
 
-    // A mismatch row gets a star note at the end of the line.
+    /**
+     * A dodgy line gets a star note stuck on the end.
+     */
     @Test
-    void toStringFlagsAMismatch() {
-        // step 1: turn the Singapore row into text
-        // step 2: check the text has a * in it
-        String line = new PopulationBreakdown("Singapore", 3567000, 4017733).toString();
+    void dodgyLineGetsAStar() {
+        assertTrue(singapore.toString().contains("*"));
+    }
 
-        assertTrue(line.contains("*"));
+    /**
+     * Big numbers should get commas in them so they're easy to read.
+     */
+    @Test
+    void bigNumbersGetCommas() {
+        String line = asia.toString();
+
+        assertTrue(line.contains(String.format("%,d", 3705025700L)));
+        assertTrue(line.contains(String.format("%,d", 697604103L)));
     }
 }

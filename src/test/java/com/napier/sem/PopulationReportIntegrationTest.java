@@ -10,306 +10,277 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration tests for PopulationReport (UC5, the population lookup).
+ * Tests for the population lookup (UC5) that use the REAL database.
  * <p>
- * These tests use the real world database, so it must be running on localhost:33060
- * (start the db service from docker-compose).
- * <p>
- * The "integration" tag means these tests only run when asked for:
+ * The database needs to be running on localhost:33060 for these to work
+ * (start it with docker-compose). They only run when you ask for them with:
  * mvn test -Dgroups=integration -Dtest.excluded=none
  * <p>
- * The expected numbers come from the world database (db/world_db/world.sql).
+ * All the numbers we check against come from db/world_db/world.sql.
  */
 @Tag("integration")
 public class PopulationReportIntegrationTest {
 
+    /** The world population, which a few tests need. */
+    private static final long WORLD = 6078749450L;
+
+    /** The database connection, shared by every test. */
     static DatabaseConnector con;
+
+    /** The lookup we're testing. */
     static PopulationReport report;
 
-    // Connects to the database once, before all the tests.
+    /**
+     * Connects to the database once before any of the tests run.
+     */
     @BeforeAll
-    static void init() {
+    static void connect() {
         con = new DatabaseConnector();
         con.connect("localhost:33060", 30000);
         report = new PopulationReport(con.getConnection());
     }
 
-    // Closes the database connection after all the tests.
+    /**
+     * Disconnects from the database once all the tests are done.
+     */
     @AfterAll
-    static void cleanUp() {
+    static void disconnect() {
         con.disconnect();
     }
 
-    // Gets the one answer for a lookup that should give exactly one answer.
-    private Population single(String type, String name) {
+    /**
+     * Does a lookup that should only give one answer, checks there really is just one,
+     * and gives that answer back.
+     *
+     * @param type the type of place
+     * @param name the name of the place
+     * @return the one answer
+     */
+    private Population onlyAnswer(String type, String name) {
         List<Population> answers = report.getPopulation(type, name);
-
-        assertEquals(1, answers.size(), "expected exactly one answer for " + type + " " + name);
+        assertEquals(1, answers.size(), "should be one answer for " + type + " " + name);
         return answers.get(0);
     }
 
-    // World
+    /**
+     * Does a lookup that should only give one answer and gives back just the number.
+     *
+     * @param type the type of place
+     * @param name the name of the place
+     * @return the number of people
+     */
+    private long numberFor(String type, String name) {
+        return onlyAnswer(type, name).getTotalPopulation();
+    }
 
-    // The world population is the sum of every country.
+    // ===== the world =====
+
+    /**
+     * The world is every country added together.
+     */
     @Test
-    void worldPopulationIsCorrect() {
-        // step 1: ask the database for the world population
-        // step 2: check there is one answer and it is 6078749450
-        Population world = single("world", "");
+    void world() {
+        Population world = onlyAnswer("world", "");
 
         assertEquals("World", world.getName());
-        assertEquals(6078749450L, world.getTotalPopulation());
+        assertEquals(WORLD, world.getTotalPopulation());
     }
 
-    // The name is ignored for the world, so any name gives the same answer.
+    /**
+     * The name doesn't matter for the world, so a random name gives the same answer.
+     */
     @Test
-    void worldIgnoresTheName() {
-        // step 1: ask for the world population with a made up name
-        // step 2: check we still get the normal world number, because the name is ignored
-        assertEquals(6078749450L, single("world", "anything at all").getTotalPopulation());
+    void worldDoesntCareAboutTheName() {
+        assertEquals(WORLD, numberFor("world", "anything at all"));
     }
 
-    // Continent
+    // ===== continents =====
 
-    // Asia is the biggest continent.
+    /**
+     * Asia and Europe have the right numbers, and Asia comes back with its name.
+     */
     @Test
-    void asiaPopulationIsCorrect() {
-        // step 1: ask for the population of the continent Asia
-        // step 2: check the answer is 3705025700
-        Population asia = single("continent", "Asia");
+    void asiaAndEurope() {
+        Population asia = onlyAnswer("continent", "Asia");
 
         assertEquals("Asia", asia.getName());
         assertEquals(3705025700L, asia.getTotalPopulation());
+        assertEquals(730074600L, numberFor("continent", "Europe"));
     }
 
-    // Check one more continent.
+    /**
+     * Nobody lives in Antarctica, so we should get one answer of 0, not "nothing found".
+     */
     @Test
-    void europePopulationIsCorrect() {
-        // step 1: ask for the population of the continent Europe
-        // step 2: check the answer is 730074600
-        assertEquals(730074600L, single("continent", "Europe").getTotalPopulation());
+    void antarcticaIsZeroNotNothing() {
+        assertEquals(0, numberFor("continent", "Antarctica"));
     }
 
-    // Antarctica has countries but nobody lives there, so the answer is 0 (not "not found").
-    @Test
-    void antarcticaHasZeroPopulation() {
-        // step 1: ask for the population of Antarctica
-        // step 2: check we get one answer of 0 (so 0 is not the same as 'not found')
-        assertEquals(0, single("continent", "Antarctica").getTotalPopulation());
-    }
-
-    // The 7 continents add up to the world population.
+    /**
+     * All 7 continents added together should be the same as the world.
+     */
     @Test
     void continentsAddUpToTheWorld() {
-        // step 1: ask for each of the 7 continents and add the numbers together
-        // step 2: check the total is the same as the world population
         String[] continents = {"Africa", "Antarctica", "Asia", "Europe",
                 "North America", "Oceania", "South America"};
 
-        long sum = 0;
-        for (String continent : continents) {
-            sum = sum + single("continent", continent).getTotalPopulation();
+        long total = 0;
+        for (int i = 0; i < continents.length; i++) {
+            total += numberFor("continent", continents[i]);
         }
 
-        assertEquals(single("world", "").getTotalPopulation(), sum);
+        assertEquals(WORLD, total);
     }
 
-    // Region
+    // ===== regions and countries =====
 
-    // The Caribbean region.
+    /**
+     * The Caribbean region.
+     */
     @Test
-    void caribbeanPopulationIsCorrect() {
-        // step 1: ask for the population of the region Caribbean
-        // step 2: check the answer is 38140000
-        assertEquals(38140000L, single("region", "Caribbean").getTotalPopulation());
+    void caribbean() {
+        assertEquals(38140000L, numberFor("region", "Caribbean"));
     }
 
-    // Country
-
-    // France has its own population stored in the country table.
+    /**
+     * France and China.
+     */
     @Test
-    void francePopulationIsCorrect() {
-        // step 1: ask for the population of the country France
-        // step 2: check the answer is 59225700
-        Population france = single("country", "France");
+    void franceAndChina() {
+        Population france = onlyAnswer("country", "France");
 
         assertEquals("France", france.getName());
         assertEquals(59225700L, france.getTotalPopulation());
+        assertEquals(1277558000L, numberFor("country", "China"));
     }
 
-    // China is the biggest country.
-    @Test
-    void chinaPopulationIsCorrect() {
-        // step 1: ask for the population of the country China
-        // step 2: check the answer is 1277558000
-        assertEquals(1277558000L, single("country", "China").getTotalPopulation());
-    }
+    // ===== districts =====
 
-    // District
-
-    // A district is the total of its cities. Scotland has 4 cities in the database.
+    /**
+     * Scotland is Glasgow + Edinburgh + Aberdeen + Dundee added up,
+     * and the name says which country it's in.
+     */
     @Test
-    void scotlandDistrictPopulationIsCorrect() {
-        // step 1: ask for the population of the district Scotland
-        // step 2: check there is one answer, labelled with its country
-        // step 3: check the number is the 4 Scottish cities added together (1429620)
-        // Glasgow + Edinburgh + Aberdeen + Dundee
-        Population scotland = single("district", "Scotland");
+    void scotland() {
+        Population scotland = onlyAnswer("district", "Scotland");
 
         assertEquals("Scotland, United Kingdom", scotland.getName());
         assertEquals(1429620L, scotland.getTotalPopulation());
     }
 
-    // "Distrito Federal" is a district in 4 different countries, so we get 4 answers
-    // (one for each country) and not one number that adds them all together.
+    /**
+     * "Distrito Federal" is in 4 countries, so we get 4 answers in country A to Z order,
+     * not one big number.
+     */
     @Test
-    void districtNameUsedInManyCountriesGivesOneAnswerForEach() {
-        // step 1: ask for the district Distrito Federal
-        // step 2: check we get 4 answers, one for each country
-        // step 3: check the country order and a couple of the numbers
+    void distritoFederalGivesOneAnswerPerCountry() {
         List<Population> answers = report.getPopulation("district", "Distrito Federal");
 
         assertEquals(4, answers.size());
-
-        // the answers are in country name order: Argentina, Brazil, Mexico, Venezuela
         assertEquals("Distrito Federal, Argentina", answers.get(0).getName());
         assertEquals(2982146L, answers.get(0).getTotalPopulation());
         assertEquals("Distrito Federal, Mexico", answers.get(2).getName());
         assertEquals(8591309L, answers.get(2).getTotalPopulation());
     }
 
-    // The district "Central" is in 7 countries.
+    /**
+     * "Central" is a district in 7 different countries.
+     */
     @Test
-    void centralDistrictGivesSevenAnswers() {
-        // step 1: ask for the district Central
-        // step 2: check we get 7 answers, one for each country that has a Central
+    void centralGivesSevenAnswers() {
         assertEquals(7, report.getPopulation("district", "Central").size());
     }
 
-    // City
+    // ===== cities =====
 
-    // Edinburgh is only in the database once, and the label shows where it is.
+    /**
+     * Edinburgh is only in there once, and the name says where it is.
+     */
     @Test
-    void edinburghPopulationIsCorrect() {
-        // step 1: ask for the population of the city Edinburgh
-        // step 2: check there is one answer, 450180, with the label showing Scotland and United Kingdom
-        Population edinburgh = single("city", "Edinburgh");
+    void edinburgh() {
+        Population edinburgh = onlyAnswer("city", "Edinburgh");
 
         assertEquals("Edinburgh, Scotland, United Kingdom", edinburgh.getName());
         assertEquals(450180L, edinburgh.getTotalPopulation());
     }
 
-    // Two cities are called Birmingham (England and Alabama), so we get two answers.
+    /**
+     * There are two Birminghams (one in England and one in Alabama). We should get both,
+     * with the right number for each, and be able to tell them apart by the country.
+     */
     @Test
-    void cityNameUsedTwiceGivesTwoAnswers() {
-        // step 1: ask for the city Birmingham
-        // step 2: check we get 2 answers (England and Alabama) with the right numbers
+    void twoBirminghams() {
         List<Population> answers = report.getPopulation("city", "Birmingham");
-
         assertEquals(2, answers.size());
-    }
 
-    // The two Birminghams are in different countries.
-    @Test
-    void duplicateCitiesShowTheirCountry() {
-        // step 1: ask for the city Birmingham
-        // step 2: check one label says United Kingdom and the other says United States, so you can tell them apart
-        List<Population> answers = report.getPopulation("city", "Birmingham");
+        boolean gotEngland = false;
+        boolean gotAlabama = false;
 
-        boolean foundEngland = false;
-        boolean foundAlabama = false;
         for (Population answer : answers) {
             if (answer.getName().contains("United Kingdom")) {
-                foundEngland = true;
+                gotEngland = true;
                 assertEquals(1013000L, answer.getTotalPopulation());
-            }
-            if (answer.getName().contains("United States")) {
-                foundAlabama = true;
+            } else if (answer.getName().contains("United States")) {
+                gotAlabama = true;
                 assertEquals(242820L, answer.getTotalPopulation());
             }
         }
 
-        assertTrue(foundEngland);
-        assertTrue(foundAlabama);
+        assertTrue(gotEngland);
+        assertTrue(gotAlabama);
     }
 
-    // Input is cleaned
+    // ===== what you type in =====
 
-    // Capitals and spaces in the type and the name do not matter.
+    /**
+     * Capitals and extra spaces in the type and name shouldn't matter.
+     */
     @Test
-    void typeAndNameAreCleaned() {
-        // step 1: ask using capital letters and extra spaces in the type and the name
-        // step 2: check we still get the normal France answer
-        assertEquals(59225700L, single("  COUNTRY ", "  France  ").getTotalPopulation());
+    void capitalsAndSpacesDontMatter() {
+        assertEquals(59225700L, numberFor("  COUNTRY ", "  France  "));
     }
 
-    // Not found
-
-    // An area that does not exist gives an empty list (and not an error).
+    /**
+     * Places that don't exist (or are spelt wrong) should give an empty list, not an error.
+     */
     @Test
-    void unknownCountryGivesEmptyList() {
-        // step 1: ask for a country that does not exist
-        // step 2: check we get an empty list and no error
+    void madeUpPlacesGiveNothing() {
         assertTrue(report.getPopulation("country", "Atlantis").isEmpty());
-    }
-
-    // The same for the other types.
-    @Test
-    void unknownAreasGiveEmptyLists() {
-        // step 1: ask for a made up continent, region, district and city
-        // step 2: check each one gives an empty list
+        assertTrue(report.getPopulation("country", "Frnace").isEmpty());
         assertTrue(report.getPopulation("continent", "Narnia").isEmpty());
         assertTrue(report.getPopulation("region", "Narnia").isEmpty());
         assertTrue(report.getPopulation("district", "Narnia").isEmpty());
         assertTrue(report.getPopulation("city", "Narnia").isEmpty());
     }
 
-    // Names are case insensitive in MySQL, but spelling must still be right.
+    /**
+     * A made up type or a blank name should throw an error.
+     */
     @Test
-    void misspeltNameGivesEmptyList() {
-        // step 1: ask for a country with a spelling mistake in it
-        // step 2: check we get an empty list, because the spelling has to be right
-        assertTrue(report.getPopulation("country", "Frnace").isEmpty());
-    }
-
-    // Bad input
-
-    // A type that is not one of the 6 allowed types is refused.
-    @Test
-    void unknownTypeIsRejected() {
-        // step 1: ask using a type that is not allowed (like planet)
-        // step 2: check it gives an error
+    void badInputThrowsAnError() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
                 () -> report.getPopulation("planet", "Mars"));
-
         assertTrue(e.getMessage().contains("planet"));
-    }
 
-    // A blank name is refused before the database is used.
-    @Test
-    void blankNameIsRejected() {
-        // step 1: ask for a country with a blank name
-        // step 2: check it gives an error
         assertThrows(IllegalArgumentException.class, () -> report.getPopulation("country", "   "));
     }
 
-    // Safety
+    // ===== safety =====
 
-    // The ? in the SQL stops SQL injection, so this trick must find nothing and must not crash.
+    /**
+     * Someone trying to sneak SQL in through the name (SQL injection) shouldn't work.
+     * If it did work we'd get every country back instead of nothing.
+     */
     @Test
-    void sqlInjectionDoesNotWork() {
-        // step 1: type a nasty bit of SQL (' OR '1'='1) in as the name
-        // step 2: check we get an empty list and not every country, so the trick did not work
-        List<Population> answers = report.getPopulation("country", "France' OR '1'='1");
-
-        assertTrue(answers.isEmpty());
+    void sqlInjectionDoesntWork() {
+        assertTrue(report.getPopulation("country", "France' OR '1'='1").isEmpty());
     }
 
-    // A name with a quote in it must not break the query either.
+    /**
+     * A name with a ' in it shouldn't break the query.
+     */
     @Test
-    void nameWithAQuoteDoesNotCrash() {
-        // step 1: ask for a name with a ' in it
-        // step 2: check there is no crash and we get an empty list
+    void quoteInTheNameIsFine() {
         assertDoesNotThrow(() -> report.getPopulation("city", "O'Brien"));
     }
 }
