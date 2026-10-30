@@ -8,45 +8,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Creates the Country Reports (Use Case 1).
+ * The country reports (UC1).
  * <p>
  * There are 6 reports:
- * 1. All countries in the world
- * 2. All countries in a continent
- * 3. All countries in a region
- * 4. Top N countries in the world
- * 5. Top N countries in a continent
- * 6. Top N countries in a region
+ * all countries in the world, in a continent, or in a region,
+ * and the top N countries in the world, in a continent, or in a region.
+ * Every report goes from the most people to the least.
  * <p>
- * Every report is sorted from the largest population to the smallest.
+ * All the SQL uses a LEFT JOIN onto the city table to get the capital's name.
+ * It's a LEFT JOIN so countries with no capital (like Antarctica) still show up.
+ * If two countries have the same population we sort them by name so the order never changes.
  */
 public class CountryReport {
 
-    // The SQL that every country report starts with.
-    // It joins the city table to get the capital's name.
-    // LEFT JOIN keeps countries that have no capital (e.g. Antarctica).
-    private static final String BASE_QUERY =
-            "SELECT country.Code, country.Name, country.Continent, country.Region, "
-                    + "country.Population, country.Capital, city.Name AS CapitalName "
-                    + "FROM country "
-                    + "LEFT JOIN city ON country.Capital = city.ID ";
-
-    // Sort by population, largest first.
-    // If two countries have the same population, sort them by name,
-    // so the order is always the same.
-    private static final String ORDER_BY =
-            "ORDER BY country.Population DESC, country.Name ASC ";
-
-    // Column layout for the header. It matches Country.toReportRow().
-    private static final String HEADER_FORMAT = "%-4s %-45s %-15s %-26s %15s  %s";
-
-    // The database connection from DatabaseConnector.
-    private final Connection con;
+    /** The link to the database. */
+    private Connection con;
 
     /**
-     * Creates a CountryReport that uses the given database connection.
+     * Makes a new country report.
      *
-     * @param con an open connection to the world database
+     * @param con the database connection (can't be null)
      * @throws NullPointerException if the connection is null
      */
     public CountryReport(Connection con) {
@@ -57,156 +38,211 @@ public class CountryReport {
     }
 
     /**
-     * Report 1: all countries in the world.
+     * Report 1: every country in the world.
      *
-     * @return the countries, largest population first
+     * @return the countries, most people first
      */
     public List<Country> getAllCountries() {
-        String sql = BASE_QUERY + ORDER_BY;
-        return runQuery(sql);
+        try {
+            PreparedStatement stmt = con.prepareStatement(
+                    "SELECT country.Code, country.Name, country.Continent, country.Region, "
+                            + "country.Population, country.Capital, city.Name AS CapitalName "
+                            + "FROM country LEFT JOIN city ON country.Capital = city.ID "
+                            + "ORDER BY country.Population DESC, country.Name ASC");
+            return getCountries(stmt);
+        } catch (SQLException e) {
+            System.out.println("Query failed: " + e.getMessage());
+            return new ArrayList<Country>();
+        }
     }
 
     /**
-     * Report 2: all countries in a continent.
+     * Report 2: every country in a continent.
      *
-     * @param continent the continent, e.g. "Europe"
-     * @return the countries, largest population first
+     * @param continent the continent, like "Europe"
+     * @return the countries, most people first
      */
     public List<Country> getCountriesByContinent(String continent) {
-        String sql = BASE_QUERY + "WHERE country.Continent = ? " + ORDER_BY;
-        return runQuery(sql, continent);
+        try {
+            PreparedStatement stmt = con.prepareStatement(
+                    "SELECT country.Code, country.Name, country.Continent, country.Region, "
+                            + "country.Population, country.Capital, city.Name AS CapitalName "
+                            + "FROM country LEFT JOIN city ON country.Capital = city.ID "
+                            + "WHERE country.Continent = ? "
+                            + "ORDER BY country.Population DESC, country.Name ASC");
+            stmt.setString(1, continent);
+            return getCountries(stmt);
+        } catch (SQLException e) {
+            System.out.println("Query failed: " + e.getMessage());
+            return new ArrayList<Country>();
+        }
     }
 
     /**
-     * Report 3: all countries in a region.
+     * Report 3: every country in a region.
      *
-     * @param region the region, e.g. "Caribbean"
-     * @return the countries, largest population first
+     * @param region the region, like "Caribbean"
+     * @return the countries, most people first
      */
     public List<Country> getCountriesByRegion(String region) {
-        String sql = BASE_QUERY + "WHERE country.Region = ? " + ORDER_BY;
-        return runQuery(sql, region);
+        try {
+            PreparedStatement stmt = con.prepareStatement(
+                    "SELECT country.Code, country.Name, country.Continent, country.Region, "
+                            + "country.Population, country.Capital, city.Name AS CapitalName "
+                            + "FROM country LEFT JOIN city ON country.Capital = city.ID "
+                            + "WHERE country.Region = ? "
+                            + "ORDER BY country.Population DESC, country.Name ASC");
+            stmt.setString(1, region);
+            return getCountries(stmt);
+        } catch (SQLException e) {
+            System.out.println("Query failed: " + e.getMessage());
+            return new ArrayList<Country>();
+        }
     }
 
     /**
      * Report 4: the top N countries in the world.
      *
-     * @param n how many countries to show (1 or more)
+     * @param n how many countries to show (has to be 1 or more)
      * @return the N countries with the most people
      */
     public List<Country> getTopCountries(int n) {
-        checkN(n);
-        String sql = BASE_QUERY + ORDER_BY + "LIMIT ?";
-        return runQuery(sql, n);
+        if (n < 1) {
+            throw new IllegalArgumentException("N must be 1 or more but was: " + n);
+        }
+        try {
+            PreparedStatement stmt = con.prepareStatement(
+                    "SELECT country.Code, country.Name, country.Continent, country.Region, "
+                            + "country.Population, country.Capital, city.Name AS CapitalName "
+                            + "FROM country LEFT JOIN city ON country.Capital = city.ID "
+                            + "ORDER BY country.Population DESC, country.Name ASC "
+                            + "LIMIT ?");
+            stmt.setInt(1, n);
+            return getCountries(stmt);
+        } catch (SQLException e) {
+            System.out.println("Query failed: " + e.getMessage());
+            return new ArrayList<Country>();
+        }
     }
 
     /**
      * Report 5: the top N countries in a continent.
      *
-     * @param continent the continent, e.g. "Asia"
-     * @param n         how many countries to show (1 or more)
+     * @param continent the continent, like "Asia"
+     * @param n         how many countries to show (has to be 1 or more)
      * @return the N countries with the most people in that continent
      */
     public List<Country> getTopCountriesByContinent(String continent, int n) {
-        checkN(n);
-        String sql = BASE_QUERY + "WHERE country.Continent = ? " + ORDER_BY + "LIMIT ?";
-        return runQuery(sql, continent, n);
+        if (n < 1) {
+            throw new IllegalArgumentException("N must be 1 or more but was: " + n);
+        }
+        try {
+            PreparedStatement stmt = con.prepareStatement(
+                    "SELECT country.Code, country.Name, country.Continent, country.Region, "
+                            + "country.Population, country.Capital, city.Name AS CapitalName "
+                            + "FROM country LEFT JOIN city ON country.Capital = city.ID "
+                            + "WHERE country.Continent = ? "
+                            + "ORDER BY country.Population DESC, country.Name ASC "
+                            + "LIMIT ?");
+            stmt.setString(1, continent);
+            stmt.setInt(2, n);
+            return getCountries(stmt);
+        } catch (SQLException e) {
+            System.out.println("Query failed: " + e.getMessage());
+            return new ArrayList<Country>();
+        }
     }
 
     /**
      * Report 6: the top N countries in a region.
      *
-     * @param region the region, e.g. "Western Europe"
-     * @param n      how many countries to show (1 or more)
+     * @param region the region, like "Western Europe"
+     * @param n      how many countries to show (has to be 1 or more)
      * @return the N countries with the most people in that region
      */
     public List<Country> getTopCountriesByRegion(String region, int n) {
-        checkN(n);
-        String sql = BASE_QUERY + "WHERE country.Region = ? " + ORDER_BY + "LIMIT ?";
-        return runQuery(sql, region, n);
+        if (n < 1) {
+            throw new IllegalArgumentException("N must be 1 or more but was: " + n);
+        }
+        try {
+            PreparedStatement stmt = con.prepareStatement(
+                    "SELECT country.Code, country.Name, country.Continent, country.Region, "
+                            + "country.Population, country.Capital, city.Name AS CapitalName "
+                            + "FROM country LEFT JOIN city ON country.Capital = city.ID "
+                            + "WHERE country.Region = ? "
+                            + "ORDER BY country.Population DESC, country.Name ASC "
+                            + "LIMIT ?");
+            stmt.setString(1, region);
+            stmt.setInt(2, n);
+            return getCountries(stmt);
+        } catch (SQLException e) {
+            System.out.println("Query failed: " + e.getMessage());
+            return new ArrayList<Country>();
+        }
     }
 
     /**
-     * Prints a report as a table.
-     * It shows the title, the column names, a line, and then one row per country.
-     * It is static because it only prints the list it is given and never uses the database.
+     * Runs a query that's already been set up and turns every row into a Country.
      *
-     * @param title     the name of the report, shown at the top
+     * @param stmt the query, with all the ? gaps already filled in
+     * @return the countries it found
+     * @throws SQLException if something goes wrong with the database
+     */
+    private List<Country> getCountries(PreparedStatement stmt) throws SQLException {
+        List<Country> countries = new ArrayList<Country>();
+        ResultSet rs = stmt.executeQuery();
+
+        while (rs.next()) {
+            // if a country has no capital, getInt gives 0, and wasNull tells us it was really empty
+            Integer capitalId = rs.getInt("Capital");
+            if (rs.wasNull()) {
+                capitalId = null;
+            }
+
+            Country country = new Country(
+                    rs.getString("Code"),
+                    rs.getString("Name"),
+                    rs.getString("Continent"),
+                    rs.getString("Region"),
+                    rs.getInt("Population"),
+                    capitalId,
+                    rs.getString("CapitalName"));
+            countries.add(country);
+        }
+
+        rs.close();
+        stmt.close();
+        return countries;
+    }
+
+    /**
+     * Prints a report as a table: the title, the column names, a line, then one row per country.
+     * It's static because it only prints the list it's given and never needs the database.
+     *
+     * @param title     the name of the report
      * @param countries the countries to print (can be null or empty)
      */
     public static void printReport(String title, List<Country> countries) {
-        String header = String.format(HEADER_FORMAT,
-                "Code", "Name", "Continent", "Region", "Population", "Capital");
-
         System.out.println();
         System.out.println(title);
 
-        // If there is no list or it is empty, say so instead of printing an empty table.
+        // if there's nothing to show just say so
         if (countries == null || countries.isEmpty()) {
             System.out.println("No countries found.");
             return;
         }
 
+        String header = String.format("%-4s %-45s %-15s %-26s %15s  %s",
+                "Code", "Name", "Continent", "Region", "Population", "Capital");
         System.out.println(header);
         System.out.println("-".repeat(header.length()));
 
         for (Country country : countries) {
-            // Skip any missing entries so one bad item does not stop the whole report.
+            // skip any empty spots in the list so one bad one doesn't break the whole report
             if (country == null) {
                 continue;
             }
             System.out.println(country.toReportRow());
         }
-    }
-
-    /**
-     * Checks that N is 1 or more. A top 0 or top -5 report makes no sense.
-     *
-     * @param n the number to check
-     * @throws IllegalArgumentException if N is less than 1
-     */
-    private void checkN(int n) {
-        if (n < 1) {
-            throw new IllegalArgumentException("N must be 1 or more but was: " + n);
-        }
-    }
-
-    /**
-     * Runs a SQL query and turns each row into a Country.
-     * <p>
-     * Each "?" in the query is replaced by a value, in order.
-     * This is called a PreparedStatement. It keeps the query safe,
-     * because the values can never change the SQL itself.
-     *
-     * @param sql    the SQL query, with a "?" for each value
-     * @param values the values for the "?" places (text or numbers)
-     * @return the countries found, or an empty list if something went wrong
-     */
-    private List<Country> runQuery(String sql, Object... values) {
-        List<Country> countries = new ArrayList<>();
-
-        // "try (...)" closes the statement and the results for us when we are done.
-        try (PreparedStatement stmt = con.prepareStatement(sql)) {
-
-            // Put each value into its "?". Numbering starts at 1, not 0.
-            for (int i = 0; i < values.length; i++) {
-                if (values[i] instanceof Integer) {
-                    stmt.setInt(i + 1, (Integer) values[i]);
-                } else {
-                    stmt.setString(i + 1, (String) values[i]);
-                }
-            }
-
-            try (ResultSet rset = stmt.executeQuery()) {
-                // Go through the results one row at a time.
-                while (rset.next()) {
-                    countries.add(Country.fromResultSet(rset));
-                }
-            }
-        } catch (SQLException e) {
-            System.out.println("Query failed: " + e.getMessage());
-        }
-
-        return countries;
     }
 }
