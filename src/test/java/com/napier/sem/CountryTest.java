@@ -1,192 +1,270 @@
 package com.napier.sem;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for the Country class.
+ * Tests for the Country class (UC1).
  * <p>
- * These tests do not need the database.
- * They check that a Country keeps good data and refuses bad data.
+ * These don't need the database. They just check that a Country holds onto
+ * good data and says no to bad data.
  */
 public class CountryTest {
 
-    // Makes a normal country that we can use in many tests.
-    private Country validCountry() {
-        return new Country("GBR", "United Kingdom", "Europe", "British Islands",
-                59623400, 456, "London");
+    /** A normal country (the UK) that gets made fresh before every test. */
+    private Country uk;
+
+    /** Antarctica, which has nobody living there and no capital. */
+    private Country antarctica;
+
+    /**
+     * Makes brand new countries before each test, so one test can't mess up another one.
+     */
+    @BeforeEach
+    void makeCountries() {
+        uk = new Country("GBR", "United Kingdom", "Europe", "British Islands", 59623400, 456, "London");
+        antarctica = new Country("ATA", "Antarctica", "Antarctica", "Antarctica", 0, null, null);
     }
 
-    // Good data
+    // ===== good data =====
 
-    // A country made with good data keeps every value.
+    /**
+     * Whatever we put in, we should get back out.
+     */
     @Test
-    void validCountryKeepsAllValues() {
-        Country c = validCountry();
+    void keepsAllTheValues() {
+        assertEquals("GBR", uk.getCode());
+        assertEquals("United Kingdom", uk.getName());
+        assertEquals("Europe", uk.getContinent());
+        assertEquals("British Islands", uk.getRegion());
+        assertEquals(59623400, uk.getPopulation());
+        assertEquals(456, uk.getCapitalId());
+        assertEquals("London", uk.getCapitalName());
+    }
 
+    /**
+     * The code gets tidied up: spaces chopped off and small letters turned into capitals.
+     */
+    @Test
+    void codeGetsTidiedUp() {
+        Country c = new Country(" gbr ", "United Kingdom", "Europe", "British Islands", 59623400, 456, "London");
         assertEquals("GBR", c.getCode());
-        assertEquals("United Kingdom", c.getName());
-        assertEquals("Europe", c.getContinent());
-        assertEquals("British Islands", c.getRegion());
-        assertEquals(59623400, c.getPopulation());
-        assertEquals(456, c.getCapitalId());
-        assertEquals("London", c.getCapitalName());
     }
 
-    // The code is cleaned: spaces are removed and letters become capitals.
+    /**
+     * Antarctica has 0 people and no capital, and that's all fine.
+     */
     @Test
-    void codeIsChangedToUpperCaseAndTrimmed() {
-        Country c = new Country(" gbr ", "United Kingdom", "Europe", "British Islands",
-                59623400, 456, "London");
-
-        assertEquals("GBR", c.getCode());
+    void zeroPeopleAndNoCapitalIsFine() {
+        assertEquals(0, antarctica.getPopulation());
+        assertNull(antarctica.getCapitalId());
+        assertNull(antarctica.getCapitalName());
     }
 
-    // A population of 0 is allowed (for example, Antarctica).
+    /**
+     * A capital name that's just spaces gets saved as null, which means "no capital".
+     */
     @Test
-    void zeroPopulationIsAllowed() {
-        Country c = new Country("ATA", "Antarctica", "Antarctica", "Antarctica", 0, null, null);
-
-        assertEquals(0, c.getPopulation());
-    }
-
-    // A country with no capital is allowed.
-    @Test
-    void countryWithoutCapitalIsAllowed() {
-        Country c = new Country("ATA", "Antarctica", "Antarctica", "Antarctica", 0, null, null);
-
-        assertNull(c.getCapitalId());
-        assertNull(c.getCapitalName());
-    }
-
-    // An empty capital name is saved as null, which means "no capital".
-    @Test
-    void blankCapitalNameIsSavedAsNull() {
+    void blankCapitalNameBecomesNull() {
         Country c = new Country("ATA", "Antarctica", "Antarctica", "Antarctica", 0, null, "   ");
-
         assertNull(c.getCapitalName());
     }
 
-    // Bad code
+    // ===== bad data =====
 
-    // The code must have exactly 3 letters.
+    /**
+     * The code has to be exactly 3 letters, so 2 letters or a number in it should throw an error.
+     */
     @Test
-    void codeWithWrongLengthIsRejected() {
+    void saysNoToBadCodes() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Country("GB", "United Kingdom", "Europe", "British Islands", 1, null, null));
-    }
-
-    // The code can only have letters, not numbers.
-    @Test
-    void codeWithNumbersIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Country("G8R", "United Kingdom", "Europe", "British Islands", 1, null, null));
     }
 
-    // Bad name
-
-    // The name cannot be missing.
+    /**
+     * The name can't be null, just spaces, or longer than 100 characters.
+     */
     @Test
-    void nullNameIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                new Country("GBR", null, "Europe", "British Islands", 1, null, null));
-    }
-
-    // The name cannot be only spaces.
-    @Test
-    void blankNameIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                new Country("GBR", "   ", "Europe", "British Islands", 1, null, null));
-    }
-
-    // The name cannot be longer than 100 letters.
-    @Test
-    void nameThatIsTooLongIsRejected() {
+    void saysNoToBadNames() {
         String longName = "A".repeat(101);
 
+        assertThrows(IllegalArgumentException.class, () ->
+                new Country("GBR", null, "Europe", "British Islands", 1, null, null));
+        assertThrows(IllegalArgumentException.class, () ->
+                new Country("GBR", "   ", "Europe", "British Islands", 1, null, null));
         assertThrows(IllegalArgumentException.class, () ->
                 new Country("GBR", longName, "Europe", "British Islands", 1, null, null));
     }
 
-    // Bad continent and region
-
-    // The continent must be a real one from the database.
+    /**
+     * The continent has to be a real one, and the region can't be empty.
+     */
     @Test
-    void unknownContinentIsRejected() {
+    void saysNoToBadContinentsAndRegions() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Country("GBR", "United Kingdom", "Atlantis", "British Islands", 1, null, null));
-    }
-
-    // The region cannot be empty.
-    @Test
-    void blankRegionIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Country("GBR", "United Kingdom", "Europe", "", 1, null, null));
     }
 
-    // Bad population
-
-    // The population cannot be below 0.
+    /**
+     * The population can't be below 0 and it can't be missing.
+     */
     @Test
-    void negativePopulationIsRejected() {
+    void saysNoToBadPopulations() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Country("GBR", "United Kingdom", "Europe", "British Islands", -1, null, null));
-    }
-
-    // The population cannot be missing.
-    @Test
-    void nullPopulationIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Country("GBR", "United Kingdom", "Europe", "British Islands", null, null, null));
     }
 
-    // Setters also check the data, and a bad value does not change the old one.
+    /**
+     * The capital ID has to be above 0 if there is one.
+     */
     @Test
-    void setterRejectsBadValueAfterCreation() {
-        Country c = validCountry();
-
-        assertThrows(IllegalArgumentException.class, () -> c.setPopulation(-5));
-        assertEquals(59623400, c.getPopulation());
-    }
-
-    // Bad capital
-
-    // A capital city ID must be above 0.
-    @Test
-    void capitalIdOfZeroIsRejected() {
+    void saysNoToCapitalIdOfZero() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Country("GBR", "United Kingdom", "Europe", "British Islands", 1, 0, "London"));
     }
 
-    // Output
-
-    // One report row shows all six columns.
+    /**
+     * The code, continent and region can't be null either.
+     */
     @Test
-    void reportRowShowsAllColumns() {
-        String row = validCountry().toReportRow();
+    void saysNoToNullCodeContinentAndRegion() {
+        assertThrows(IllegalArgumentException.class, () ->
+                new Country(null, "United Kingdom", "Europe", "British Islands", 1, null, null));
+        assertThrows(IllegalArgumentException.class, () ->
+                new Country("GBR", "United Kingdom", null, "British Islands", 1, null, null));
+        assertThrows(IllegalArgumentException.class, () ->
+                new Country("GBR", "United Kingdom", "Europe", null, 1, null, null));
+    }
+
+    /**
+     * A minus capital ID is no good either, not just 0.
+     */
+    @Test
+    void saysNoToMinusCapitalId() {
+        assertThrows(IllegalArgumentException.class, () ->
+                new Country("GBR", "United Kingdom", "Europe", "British Islands", 1, -1, "London"));
+    }
+
+    /**
+     * The region and capital name can't be longer than 100 characters.
+     */
+    @Test
+    void saysNoToLongRegionAndCapital() {
+        String tooLong = "A".repeat(101);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                new Country("GBR", "United Kingdom", "Europe", tooLong, 1, null, null));
+        assertThrows(IllegalArgumentException.class, () ->
+                new Country("GBR", "United Kingdom", "Europe", "British Islands", 1, 456, tooLong));
+    }
+
+    /**
+     * Exactly 100 characters is right on the limit, so that should be fine.
+     */
+    @Test
+    void exactly100CharactersIsFine() {
+        String hundred = "A".repeat(100);
+        Country c = new Country("GBR", hundred, "Europe", hundred, 1, 456, hundred);
+
+        assertEquals(hundred, c.getName());
+        assertEquals(hundred, c.getRegion());
+        assertEquals(hundred, c.getCapitalName());
+    }
+
+    /**
+     * Spaces around the name, continent, region and capital get chopped off.
+     */
+    @Test
+    void spacesGetChoppedOff() {
+        Country c = new Country("GBR", " United Kingdom ", "  Europe ", " British Islands ", 1, 456, " London ");
+
+        assertEquals("United Kingdom", c.getName());
+        assertEquals("Europe", c.getContinent());
+        assertEquals("British Islands", c.getRegion());
+        assertEquals("London", c.getCapitalName());
+    }
+
+    /**
+     * The setters should actually change things when the data is fine.
+     */
+    @Test
+    void goodSetChangesTheValues() {
+        uk.setCode("fra");
+        uk.setName("France");
+        uk.setContinent("Europe");
+        uk.setRegion("Western Europe");
+        uk.setPopulation(59225700);
+        uk.setCapitalId(2974);
+        uk.setCapitalName("Paris");
+
+        assertEquals("FRA", uk.getCode());
+        assertEquals("France", uk.getName());
+        assertEquals("Western Europe", uk.getRegion());
+        assertEquals(59225700, uk.getPopulation());
+        assertEquals(2974, uk.getCapitalId());
+        assertEquals("Paris", uk.getCapitalName());
+    }
+
+    /**
+     * If a setter says no, the old value should still be there afterwards.
+     * This goes through every setter.
+     */
+    @Test
+    void badSetKeepsTheOldValue() {
+        assertThrows(IllegalArgumentException.class, () -> uk.setCode("XX"));
+        assertThrows(IllegalArgumentException.class, () -> uk.setName(""));
+        assertThrows(IllegalArgumentException.class, () -> uk.setContinent("Atlantis"));
+        assertThrows(IllegalArgumentException.class, () -> uk.setRegion(" "));
+        assertThrows(IllegalArgumentException.class, () -> uk.setPopulation(-5));
+        assertThrows(IllegalArgumentException.class, () -> uk.setCapitalId(0));
+
+        assertEquals("GBR", uk.getCode());
+        assertEquals("United Kingdom", uk.getName());
+        assertEquals("Europe", uk.getContinent());
+        assertEquals("British Islands", uk.getRegion());
+        assertEquals(59623400, uk.getPopulation());
+        assertEquals(456, uk.getCapitalId());
+    }
+
+    // ===== printing =====
+
+    /**
+     * One line of the report should have all six columns in it,
+     * and the population should have commas in it.
+     */
+    @Test
+    void reportRowHasEverything() {
+        String row = uk.toReportRow();
 
         assertTrue(row.contains("GBR"));
         assertTrue(row.contains("United Kingdom"));
         assertTrue(row.contains("Europe"));
         assertTrue(row.contains("British Islands"));
         assertTrue(row.contains("London"));
-        // The population has separators, e.g. 59,623,400.
-        // String.format makes this work on any computer language setting.
         assertTrue(row.contains(String.format("%,d", 59623400)));
     }
 
-    // A country with no capital shows "N/A" at the end of its row.
+    /**
+     * A country with no capital shows "N/A" at the end of its line.
+     */
     @Test
-    void reportRowShowsNAWhenThereIsNoCapital() {
-        Country c = new Country("ATA", "Antarctica", "Antarctica", "Antarctica", 0, null, null);
-
-        assertTrue(c.toReportRow().endsWith("N/A"));
+    void noCapitalShowsNA() {
+        assertTrue(antarctica.toReportRow().endsWith("N/A"));
     }
 
-    // toString() includes the country code.
+    /**
+     * toString should have the code in it.
+     */
     @Test
-    void toStringContainsTheCode() {
-        assertTrue(validCountry().toString().contains("GBR"));
+    void toStringHasTheCode() {
+        assertTrue(uk.toString().contains("GBR"));
     }
 }
