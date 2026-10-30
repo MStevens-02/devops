@@ -37,41 +37,50 @@ public class App {
         con.disconnect();
     }
 
-    // UC1 - country reports
+    // ===== UC1 - country reports =====
 
-    // Prints all 6 country reports.
-    // n = how many countries to show in the "top N" reports
+    /**
+     * Prints all 6 country reports.
+     *
+     * @param con the database connection
+     * @param n   how many countries to show in the "top N" reports
+     */
     public static void showCountryReports(DatabaseConnector con, int n) {
-        // this object runs the country queries
         CountryReport countryReport = new CountryReport(con.getConnection());
 
-        countryReport.printReport("All countries in the world",
-                countryReport.getAllCountries());
+        // the 3 "all countries" reports
+        List<Country> world = countryReport.getAllCountries();
+        CountryReport.printReport("All countries in the world", world);
 
-        countryReport.printReport("All countries in Europe",
-                countryReport.getCountriesByContinent("Europe"));
+        List<Country> europe = countryReport.getCountriesByContinent("Europe");
+        CountryReport.printReport("All countries in Europe", europe);
 
-        countryReport.printReport("All countries in the Caribbean",
-                countryReport.getCountriesByRegion("Caribbean"));
+        List<Country> caribbean = countryReport.getCountriesByRegion("Caribbean");
+        CountryReport.printReport("All countries in the Caribbean", caribbean);
 
-        countryReport.printReport("Top " + n + " countries in the world",
-                countryReport.getTopCountries(n));
+        // the 3 "top N" reports
+        List<Country> topWorld = countryReport.getTopCountries(n);
+        CountryReport.printReport("Top " + n + " countries in the world", topWorld);
 
-        countryReport.printReport("Top " + n + " countries in Asia",
-                countryReport.getTopCountriesByContinent("Asia", n));
+        List<Country> topAsia = countryReport.getTopCountriesByContinent("Asia", n);
+        CountryReport.printReport("Top " + n + " countries in Asia", topAsia);
 
-        countryReport.printReport("Top " + n + " countries in Western Europe",
-                countryReport.getTopCountriesByRegion("Western Europe", n));
+        List<Country> topWesternEurope = countryReport.getTopCountriesByRegion("Western Europe", n);
+        CountryReport.printReport("Top " + n + " countries in Western Europe", topWesternEurope);
     }
 
-    // UC5 - population lookups
+    // ===== UC5 - population lookups =====
 
-    // Tries a few lookups so we can see that they work.
+    /**
+     * Does a few population lookups so we can see they work.
+     * The last two are wrong on purpose, to show the program doesn't crash.
+     *
+     * @param con the database connection
+     */
     public static void showPopulationLookups(DatabaseConnector con) {
-        // this object runs the lookup queries
         PopulationReport report = new PopulationReport(con.getConnection());
 
-        // good requests: each one should print a population
+        // these should all print a number
         printPopulation(report, "world", "");
         printPopulation(report, "continent", "Asia");
         printPopulation(report, "region", "Caribbean");
@@ -79,64 +88,75 @@ public class App {
         printPopulation(report, "district", "Scotland");
         printPopulation(report, "city", "Edinburgh");
 
-        // bad requests: each one should print a message and NOT crash the program
+        // these are wrong on purpose, they should print a message and carry on
         printPopulation(report, "planet", "Mars");
         printPopulation(report, "country", "   ");
     }
 
-    // Asks for one population and prints the answer.
-    // type = world, continent, region, country, district or city
-    // name = the name of the area (it is not used for the world)
+    /**
+     * Looks up one population and prints the answer (or answers).
+     * If the type or name is wrong it prints a message instead of crashing.
+     *
+     * @param report the lookup to use
+     * @param type   world, continent, region, country, district or city
+     * @param name   the name of the place (not needed for the world)
+     */
     public static void printPopulation(PopulationReport report, String type, String name) {
         try {
-            // ask the report for the answers
             List<Population> answers = report.getPopulation(type, name);
 
             if (answers.isEmpty()) {
-                // the list is empty when the area was not found
                 System.out.println("Nothing found for " + type + " " + name);
-            } else {
-                // a city can have more than one answer, so we use a loop
-                for (Population answer : answers) {
-                    System.out.println(answer);
-                }
+            }
+
+            // some places (like Birmingham) have more than one answer so we loop through them
+            for (Population answer : answers) {
+                System.out.println(answer);
             }
         } catch (IllegalArgumentException e) {
-            // this happens when the type or the name is not okay
             System.out.println("Bad request: " + e.getMessage());
         }
     }
 
-    // UC4 - population breakdown reports
+    // ===== UC4 - population breakdown reports =====
 
-    // Prints the breakdown for every continent, every region and every country.
+    /**
+     * Prints the population breakdown for every continent, region and country.
+     *
+     * @param con the database connection
+     */
     public static void showPopulationBreakdowns(DatabaseConnector con) {
-        // this object runs the breakdown queries
         PopulationBreakdownReport breakdownReport = new PopulationBreakdownReport(con.getConnection());
 
-        printBreakdown("Continent", breakdownReport.getContinentBreakdown());
-        printBreakdown("Region", breakdownReport.getRegionBreakdown());
-        printBreakdown("Country", breakdownReport.getCountryBreakdown());
+        List<PopulationBreakdown> continents = breakdownReport.getContinentBreakdown();
+        printBreakdown("Continent", continents);
+
+        List<PopulationBreakdown> regions = breakdownReport.getRegionBreakdown();
+        printBreakdown("Region", regions);
+
+        List<PopulationBreakdown> countries = breakdownReport.getCountryBreakdown();
+        printBreakdown("Country", countries);
     }
 
-    // Prints a title, a header line and then one line for each row.
-    // title = the first column heading, for example "Continent"
+    /**
+     * Prints one breakdown report: a title, the column names, then one line for each place.
+     *
+     * @param title the first column name, like "Continent"
+     * @param rows  the lines to print
+     */
     public static void printBreakdown(String title, List<PopulationBreakdown> rows) {
-        // a blank line, then the report title
         System.out.println();
         System.out.println("Population breakdown by " + title);
 
-        // the column headings (the numbers say how wide each column is)
+        // the numbers in here are how wide each column is so it all lines up
         System.out.println(String.format("%-30s %15s %26s %26s",
                 title, "Total", "In cities (%)", "Not in cities (%)"));
 
-        // check there is something to print
         if (rows.isEmpty()) {
             System.out.println("No data found");
             return;
         }
 
-        // print one line for each row
         for (PopulationBreakdown row : rows) {
             System.out.println(row);
         }
