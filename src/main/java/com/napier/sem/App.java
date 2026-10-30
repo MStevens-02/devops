@@ -41,7 +41,7 @@ public class App {
             con.disconnect();
             return;
         }
-
+        // use input.getproperty to capture n from input.txt
         int n = Integer.parseInt(input.getProperty("n"));
         String continent = input.getProperty("continent");
         String region = input.getProperty("region");
