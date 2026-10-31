@@ -1,7 +1,8 @@
 package com.napier.sem;
 
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 import java.util.List;
 
@@ -15,38 +16,23 @@ public class App {
         // make the object that connects to the database, then connect
         DatabaseConnector con = new DatabaseConnector();
         con.connect();
-        try {
-            Statement stmt = con.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery(
-                    "SELECT Name, Population FROM country ORDER BY Population DESC LIMIT 5"
-            );
 
-            System.out.println("\n--- Top 5 Most Populous Countries ---");
-            while (rs.next()) {
-                String name = rs.getString("Name");
-                int population = rs.getInt("Population");
-                System.out.println(name + ": " + population);
-            }
-
-        } catch (Exception e) {
-            System.out.println("Query failed: " + e.getMessage());
-        }
-
-        // Create a way to read in the user input.txt file take in the inputs and return all listed
+        // Create a way to read in the user input.txt file, take in the inputs and return all listed
         // Create a variable called input
         Properties input = new Properties();
+        // then try to read the file
         try (InputStream in = App.class.getResourceAsStream("/input.txt")) {
+            // if success then load the file
             input.load(in);
-        }
-
-        catch (IOException | NullPointerException e) {
+        } catch (IOException | NullPointerException e) {
             // if it fails to load the file, disconnect and stop
             System.out.println("Couldn't load input.txt");
             con.disconnect();
             return;
         }
 
-        // use input.getproperty to capture n, continent, reigon, country, and district from input.txt
+        // use input.getProperty to capture n, continent, region, country, and district from input.txt
+        // n is turned from text into a number with Integer.parseInt
         int n = Integer.parseInt(input.getProperty("n"));
         String continent = input.getProperty("continent");
         String region = input.getProperty("region");
@@ -54,15 +40,19 @@ public class App {
         String district = input.getProperty("district");
 
         // City reports
+        // create the city report object using the database connection
         CityReport cityReport = new CityReport(con.getConnection());
 
+        // print all the cities in the world, continent, region, country and district
         cityReport.printCities(cityReport.getAllCitiesInWorld());
         cityReport.printCities(cityReport.getAllCitiesInContinent(continent));
         cityReport.printCities(cityReport.getAllCitiesInRegion(region));
         cityReport.printCities(cityReport.getAllCitiesInCountry(country));
         cityReport.printCities(cityReport.getAllCitiesInDistrict(district));
 
-        // Disconnect from database
+        // print the top n cities in the world
+        cityReport.printCities(cityReport.getTopCitiesInWorld(n));
+
         // UC5 - print some population lookups
         showPopulationLookups(con);
 
@@ -72,6 +62,7 @@ public class App {
         // always disconnect when we are finished
         con.disconnect();
     }
+
 
     // ---------------------------------------------------------------------
     // UC5 - population lookups
@@ -140,8 +131,8 @@ public class App {
         System.out.println("Population breakdown by " + title);
 
         // the column headings (the numbers say how wide each column is)
-        System.out.println(String.format("%-30s %15s %26s %26s",
-                title, "Total", "In cities (%)", "Not in cities (%)"));
+        System.out.printf("%-30s %15s %26s %26s%n",
+                title, "Total", "In cities (%)", "Not in cities (%)");
 
         // check there is something to print
         if (rows.isEmpty()) {

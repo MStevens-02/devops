@@ -1,0 +1,5 @@
+n=5
+continent=Asia
+region=Caribbean
+country=France
+district=Scotland
