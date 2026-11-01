@@ -6,7 +6,19 @@ public class DatabaseConnector {
 
     private Connection con = null;
 
+    /**
+     * Connects using the Docker settings (used by App inside Docker).
+     */
     public void connect() {
+        connect("db:3306", 30000);
+    }
+
+    /**
+     * Connects to the database at the given location.
+     * location = where the database is, e.g. "db:3306" or "localhost:33060"
+     * delay = how long to wait (in milliseconds) before each attempt
+     */
+    public void connect(String location, int delay) {
         try {
             // Load Database driver
             Class.forName("com.mysql.cj.jdbc.Driver");
@@ -20,10 +32,10 @@ public class DatabaseConnector {
             System.out.println("Connecting to database...");
             try {
                 // Wait a bit for db to start
-                Thread.sleep(30000);
+                Thread.sleep(delay);
                 // Connect to database
                 con = DriverManager.getConnection(
-                        "jdbc:mysql://db:3306/world?allowPublicKeyRetrieval=true&useSSL=false",
+                        "jdbc:mysql://" + location + "/world?allowPublicKeyRetrieval=true&useSSL=false",
                         "root", "livelongandprosper"
                 );
                 System.out.println("Successfully connected");
