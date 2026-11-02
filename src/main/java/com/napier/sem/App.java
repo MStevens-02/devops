@@ -13,10 +13,6 @@ import java.util.List;
 public class App {
 
     public static void main(String[] args) {
-        // N for the "top N" reports. The user can give it as the first argument,
-        // e.g. "java -jar seMethods.jar 10". If nothing is given, 5 is used.
-        int n = readN(args, 5);
-
         // make the object that connects to the database, then connect
         DatabaseConnector con = new DatabaseConnector();
         con.connect();
@@ -36,8 +32,9 @@ public class App {
         }
 
         // use input.getProperty to capture n, continent, region, country, and district from input.txt
-        // n is turned from text into a number with Integer.parseInt
-        int n = Integer.parseInt(input.getProperty("n"));
+        // n is the "top N" number. The user can give it as the first argument,
+        // e.g. "java -jar seMethods.jar 10". If nothing is given, the n in input.txt is used.
+        int n = readN(args, Integer.parseInt(input.getProperty("n", "5")));
         String continent = input.getProperty("continent");
         String region = input.getProperty("region");
         String country = input.getProperty("country");
@@ -59,10 +56,6 @@ public class App {
 
         // UC1 - country reports
         showCountryReports(con, n);
-
-        // UC2 - city reports
-        CityReport cityReport = new CityReport(con.getConnection());
-        cityReport.printCities(cityReport.getTopCitiesInWorld(n));
 
         // UC5 - print some population lookups
         showPopulationLookups(con);
