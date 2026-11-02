@@ -1,230 +1,272 @@
 package com.napier.sem;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-
 /**
- * Holds the data for one country in a Country Report.
+ * Holds one country for the country reports (UC1).
  * <p>
- * The report shows: Code, Name, Continent, Region, Population and Capital.
+ * The report shows the code, name, continent, region, population and capital.
+ * The country table only stores the capital as a city ID (just a number), so the SQL
+ * in CountryReport joins the city table to get the capital's actual name.
  * <p>
- * The country table only stores the capital as a city ID (a number).
- * To get the capital's name, the SQL query joins the city table.
- * <p>
- * Every value is checked in its setter. The constructor uses the setters,
- * so a Country can never be created with bad data.
+ * Every setter checks the value first, and the constructor uses the setters,
+ * so you can never make a Country with rubbish data in it.
  */
 public class Country {
 
-  // The continents that exist in the world database.
-  public static final List<String> VALID_CONTINENTS = List.of(
-          "Africa", "Antarctica", "Asia", "Europe",
-          "North America", "Oceania", "South America");
+    /** The 3 letter code, like "GBR". */
+    private String code;
 
-  // Longest text we allow, to catch broken data.
-  private static final int MAX_NAME_LENGTH = 100;
-  private static final int MAX_REGION_LENGTH = 100;
-  private static final int MAX_CAPITAL_NAME_LENGTH = 100;
+    /** The name, like "United Kingdom". */
+    private String name;
 
-  private String code;          // 3-letter code, e.g. "GBR"
-  private String name;          // e.g. "United Kingdom"
-  private String continent;     // e.g. "Europe"
-  private String region;        // e.g. "British Islands"
-  private Integer population;   // number of people, never negative
-  private Integer capitalId;    // ID of the capital city, null if there is no capital
-  private String capitalName;   // name of the capital city, null if there is no capital
+    /** The continent, like "Europe". */
+    private String continent;
 
-  /**
-   * Creates a new Country. Every value is checked before it is saved.
-   *
-   * @param code        3-letter country code
-   * @param name        country name
-   * @param continent   continent name
-   * @param region      region name
-   * @param population  number of people
-   * @param capitalId   ID of the capital city, or null
-   * @param capitalName name of the capital city, or null
-   * @throws IllegalArgumentException if any value is not valid
-   */
-  public Country(String code, String name, String continent, String region,
-                 Integer population, Integer capitalId, String capitalName) {
-    setCode(code);
-    setName(name);
-    setContinent(continent);
-    setRegion(region);
-    setPopulation(population);
-    setCapitalId(capitalId);
-    setCapitalName(capitalName);
-  }
+    /** The region, like "British Islands". */
+    private String region;
 
-  /**
-   * Turns one row from the database into a Country.
-   *
-   * @param rs the query result, already moved to a row with rs.next()
-   * @return a Country with the values from that row
-   * @throws SQLException if a column cannot be read
-   */
-  public static Country fromResultSet(ResultSet rs) throws SQLException {
-    // If a country has no capital, getInt() gives 0 instead of null.
-    // wasNull() tells us the value was really empty, so we use null.
-    int capital = rs.getInt("Capital");
-    Integer capitalId = rs.wasNull() ? null : capital;
+    /** How many people live there. */
+    private Integer population;
 
-    return new Country(
-            rs.getString("Code"),
-            rs.getString("Name"),
-            rs.getString("Continent"),
-            rs.getString("Region"),
-            rs.getInt("Population"),
-            capitalId,
-            rs.getString("CapitalName"));
-  }
+    /** The ID of the capital city, or null if there isn't one. */
+    private Integer capitalId;
 
-  public String getCode() {
-    return code;
-  }
+    /** The name of the capital city, or null if there isn't one. */
+    private String capitalName;
 
-  /**
-   * Sets the country code. It must be exactly 3 letters.
-   * Lower case is changed to upper case, so "gbr" becomes "GBR".
-   */
-  public void setCode(String code) {
-    String cleanCode = requireString(code, "Code").toUpperCase();
-    if (!cleanCode.matches("[A-Z]{3}")) {
-      throw new IllegalArgumentException(
-              "Code must be exactly 3 letters but was: " + cleanCode);
+    /**
+     * Makes a new Country. Every value gets checked before it's saved.
+     *
+     * @param code        the 3 letter code
+     * @param name        the country name
+     * @param continent   the continent
+     * @param region      the region
+     * @param population  how many people live there
+     * @param capitalId   the ID of the capital city, or null
+     * @param capitalName the name of the capital city, or null
+     * @throws IllegalArgumentException if any of the values are bad
+     */
+    public Country(String code, String name, String continent, String region,
+                   Integer population, Integer capitalId, String capitalName) {
+        setCode(code);
+        setName(name);
+        setContinent(continent);
+        setRegion(region);
+        setPopulation(population);
+        setCapitalId(capitalId);
+        setCapitalName(capitalName);
     }
-    this.code = cleanCode;
-  }
 
-  public String getName() {
-    return name;
-  }
-
-  /**
-   * Sets the country name. It cannot be empty or too long.
-   */
-  public void setName(String name) {
-    this.name = requireMaxLength(requireString(name, "Name"), "Name", MAX_NAME_LENGTH);
-  }
-
-  public String getContinent() {
-    return continent;
-  }
-
-  /**
-   * Sets the continent. It must be one of the names in VALID_CONTINENTS.
-   */
-  public void setContinent(String continent) {
-    String cleanContinent = requireString(continent, "Continent");
-    if (!VALID_CONTINENTS.contains(cleanContinent)) {
-      throw new IllegalArgumentException("Continent '" + cleanContinent
-              + "' does not match any known continent " + VALID_CONTINENTS);
+    /**
+     * Gets the code.
+     *
+     * @return the 3 letter code
+     */
+    public String getCode() {
+        return code;
     }
-    this.continent = cleanContinent;
-  }
 
-  public String getRegion() {
-    return region;
-  }
+    /**
+     * Changes the code. It has to be exactly 3 letters (no numbers).
+     * Small letters get turned into capitals, so "gbr" becomes "GBR".
+     *
+     * @param code the new code
+     */
+    public void setCode(String code) {
+        if (code == null || code.trim().isEmpty()) {
+            throw new IllegalArgumentException("Code must not be blank or null.");
+        }
+        code = code.trim().toUpperCase();
 
-  /**
-   * Sets the region. It cannot be empty or too long.
-   */
-  public void setRegion(String region) {
-    this.region = requireMaxLength(requireString(region, "Region"), "Region", MAX_REGION_LENGTH);
-  }
+        if (code.length() != 3) {
+            throw new IllegalArgumentException("Code must be exactly 3 letters but was: " + code);
+        }
 
-  public Integer getPopulation() {
-    return population;
-  }
+        // go through each character and make sure it's a letter from A to Z
+        for (int i = 0; i < code.length(); i++) {
+            char letter = code.charAt(i);
+            if (letter < 'A' || letter > 'Z') {
+                throw new IllegalArgumentException("Code must be exactly 3 letters but was: " + code);
+            }
+        }
 
-  /**
-   * Sets the population. It cannot be empty or below 0.
-   */
-  public void setPopulation(Integer population) {
-    if (population == null) {
-      throw new IllegalArgumentException("Population must not be null.");
+        this.code = code;
     }
-    if (population < 0) {
-      throw new IllegalArgumentException(
-              "Population cannot be negative but was: " + population);
+
+    /**
+     * Gets the name.
+     *
+     * @return the country name
+     */
+    public String getName() {
+        return name;
     }
-    this.population = population;
-  }
 
-  public Integer getCapitalId() {
-    return capitalId;
-  }
-
-  /**
-   * Sets the capital city ID. It can be null (no capital),
-   * but if there is a value it must be above 0.
-   */
-  public void setCapitalId(Integer capitalId) {
-    if (capitalId != null && capitalId <= 0) {
-      throw new IllegalArgumentException(
-              "Capital city ID must be greater than 0 but was: " + capitalId);
+    /**
+     * Changes the name. It can't be empty or longer than 100 characters.
+     *
+     * @param name the new name
+     */
+    public void setName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Name must not be blank or null.");
+        }
+        if (name.trim().length() > 100) {
+            throw new IllegalArgumentException("Name must not be longer than 100 characters.");
+        }
+        this.name = name.trim();
     }
-    this.capitalId = capitalId;
-  }
 
-  public String getCapitalName() {
-    return capitalName;
-  }
-
-  /**
-   * Sets the capital city name. An empty name is saved as null,
-   * which means the country has no capital.
-   */
-  public void setCapitalName(String capitalName) {
-    if (capitalName == null || capitalName.trim().isEmpty()) {
-      this.capitalName = null;
-      return;
+    /**
+     * Gets the continent.
+     *
+     * @return the continent
+     */
+    public String getContinent() {
+        return continent;
     }
-    this.capitalName = requireMaxLength(capitalName.trim(), "Capital name", MAX_CAPITAL_NAME_LENGTH);
-  }
 
-  /**
-   * Returns this country as one line of the report, with the columns lined up.
-   * The population has commas (e.g. 59,623,400) and a missing capital shows "N/A".
-   */
-  public String toReportRow() {
-    return String.format("%-4s %-45s %-15s %-26s %,15d  %s",
-            code, name, continent, region, population,
-            capitalName == null ? "N/A" : capitalName);
-  }
+    /**
+     * Changes the continent. It has to be one of the 7 real continents in the database.
+     *
+     * @param continent the new continent
+     */
+    public void setContinent(String continent) {
+        if (continent == null || continent.trim().isEmpty()) {
+            throw new IllegalArgumentException("Continent must not be blank or null.");
+        }
+        continent = continent.trim();
 
-  /**
-   * Returns all the values of this country. Useful when testing or debugging.
-   */
-  @Override
-  public String toString() {
-    return "Country{code=" + code + ", name=" + name + ", continent=" + continent
-            + ", region=" + region + ", population=" + population
-            + ", capitalId=" + capitalId + ", capitalName=" + capitalName + "}";
-  }
+        if (!continent.equals("Africa") && !continent.equals("Antarctica")
+                && !continent.equals("Asia") && !continent.equals("Europe")
+                && !continent.equals("North America") && !continent.equals("Oceania")
+                && !continent.equals("South America")) {
+            throw new IllegalArgumentException("Continent '" + continent
+                    + "' does not match any known continent");
+        }
 
-  /**
-   * Checks that a text value is not empty.
-   * Returns the text with extra spaces removed from both ends.
-   */
-  private static String requireString(String value, String field) {
-    if (value == null || value.trim().isEmpty()) {
-      throw new IllegalArgumentException(field + " must not be blank or null.");
+        this.continent = continent;
     }
-    return value.trim();
-  }
 
-  /**
-   * Checks that a text value is not longer than the limit.
-   */
-  private static String requireMaxLength(String value, String field, int max) {
-    if (value.length() > max) {
-      throw new IllegalArgumentException(
-              field + " must not be longer than " + max + " characters.");
+    /**
+     * Gets the region.
+     *
+     * @return the region
+     */
+    public String getRegion() {
+        return region;
     }
-    return value;
-  }
+
+    /**
+     * Changes the region. It can't be empty or longer than 100 characters.
+     *
+     * @param region the new region
+     */
+    public void setRegion(String region) {
+        if (region == null || region.trim().isEmpty()) {
+            throw new IllegalArgumentException("Region must not be blank or null.");
+        }
+        if (region.trim().length() > 100) {
+            throw new IllegalArgumentException("Region must not be longer than 100 characters.");
+        }
+        this.region = region.trim();
+    }
+
+    /**
+     * Gets the population.
+     *
+     * @return how many people live there
+     */
+    public Integer getPopulation() {
+        return population;
+    }
+
+    /**
+     * Changes the population. It can't be missing and it can't be below 0.
+     *
+     * @param population the new population
+     */
+    public void setPopulation(Integer population) {
+        if (population == null) {
+            throw new IllegalArgumentException("Population must not be null.");
+        }
+        if (population < 0) {
+            throw new IllegalArgumentException("Population cannot be negative but was: " + population);
+        }
+        this.population = population;
+    }
+
+    /**
+     * Gets the capital city ID.
+     *
+     * @return the ID, or null if there's no capital
+     */
+    public Integer getCapitalId() {
+        return capitalId;
+    }
+
+    /**
+     * Changes the capital city ID. Null is fine (it means no capital),
+     * but if there is a number it has to be above 0.
+     *
+     * @param capitalId the new capital ID
+     */
+    public void setCapitalId(Integer capitalId) {
+        if (capitalId != null && capitalId <= 0) {
+            throw new IllegalArgumentException("Capital city ID must be greater than 0 but was: " + capitalId);
+        }
+        this.capitalId = capitalId;
+    }
+
+    /**
+     * Gets the capital city name.
+     *
+     * @return the name, or null if there's no capital
+     */
+    public String getCapitalName() {
+        return capitalName;
+    }
+
+    /**
+     * Changes the capital city name. If it's empty we save null, which means "no capital".
+     * It can't be longer than 100 characters.
+     *
+     * @param capitalName the new capital name
+     */
+    public void setCapitalName(String capitalName) {
+        if (capitalName == null || capitalName.trim().isEmpty()) {
+            this.capitalName = null;
+            return;
+        }
+        if (capitalName.trim().length() > 100) {
+            throw new IllegalArgumentException("Capital name must not be longer than 100 characters.");
+        }
+        this.capitalName = capitalName.trim();
+    }
+
+    /**
+     * Makes one line of the report with all the columns lined up.
+     * The population gets commas in it and a missing capital shows "N/A".
+     *
+     * @return one line of the report
+     */
+    public String toReportRow() {
+        String capital = capitalName;
+        if (capital == null) {
+            capital = "N/A";
+        }
+        return String.format("%-4s %-45s %-15s %-26s %,15d  %s",
+                code, name, continent, region, population, capital);
+    }
+
+    /**
+     * Shows every value in the country. Handy for testing.
+     *
+     * @return all the values as text
+     */
+    @Override
+    public String toString() {
+        return "Country{code=" + code + ", name=" + name + ", continent=" + continent
+                + ", region=" + region + ", population=" + population
+                + ", capitalId=" + capitalId + ", capitalName=" + capitalName + "}";
+    }
 }
