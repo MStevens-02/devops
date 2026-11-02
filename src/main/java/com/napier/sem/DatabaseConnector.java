@@ -20,6 +20,7 @@ public class DatabaseConnector {
     private Connection con = null;
 
     /**
+     * Connects using the Docker settings (used by App inside Docker).
      * Connects to the database inside Docker.
      * App.java uses this, so it keeps working without any change.
      */
@@ -28,6 +29,9 @@ public class DatabaseConnector {
     }
 
     /**
+     * Connects to the database at the given location.
+     * location = where the database is, e.g. "db:3306" or "localhost:33060"
+     * delay = how long to wait (in milliseconds) before each attempt
      * Connects to the world database.
      * If the database is not ready yet, it waits and tries again.
      *
@@ -46,6 +50,13 @@ public class DatabaseConnector {
         for (int i = 0; i < RETRIES; ++i) {
             System.out.println("Connecting to database...");
             try {
+                // Wait a bit for db to start
+                Thread.sleep(delay);
+                // Connect to database
+                con = DriverManager.getConnection(
+                        "jdbc:mysql://" + location + "/world?allowPublicKeyRetrieval=true&useSSL=false",
+                        "root", "livelongandprosper"
+                );
                 con = DriverManager.getConnection(
                         "jdbc:mysql://" + location
                                 + "/world?allowPublicKeyRetrieval=true&useSSL=false",

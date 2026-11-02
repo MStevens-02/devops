@@ -73,7 +73,8 @@ public class City {
     // Create a set district method to validate district
     public void setDistrict(String district) {
         if (district == null || district.trim().isEmpty()) {
-            throw new IllegalArgumentException("District must not be null or blank");
+            this.district = "Unknown";
+            return;
         }
         this.district = district.trim();
     }
