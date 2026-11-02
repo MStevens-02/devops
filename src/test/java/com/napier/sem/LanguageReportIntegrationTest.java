@@ -21,7 +21,7 @@ public class LanguageReportIntegrationTest {
     private static DatabaseConnector db;
     private static LanguageReport report;
 
-    // Connect once before all tests[cite: 1].
+    // Connect once before all tests.
     @BeforeAll
     static void init() {
         db = new DatabaseConnector();
@@ -30,13 +30,13 @@ public class LanguageReportIntegrationTest {
         report = new LanguageReport(db.getConnection());
     }
 
-    // Close the connection after all tests[cite: 1].
+    // Close the connection after all tests.
     @AfterAll
     static void close() {
         db.disconnect();
     }
 
-    // The report has exactly 5 languages[cite: 1].
+    // The report has exactly 5 languages.
     @Test
     void reportHasFiveLanguages() {
         List<Language> languages = report.getLanguageStatistics();
@@ -44,7 +44,7 @@ public class LanguageReportIntegrationTest {
         assertEquals(5, languages.size());
     }
 
-    // The 5 languages are Chinese, English, Hindi, Spanish and Arabic[cite: 1].
+    // The 5 languages are Chinese, English, Hindi, Spanish and Arabic.
     @Test
     void reportHasTheFiveTargetLanguages() {
         Set<String> expected = Set.of("Chinese", "English", "Hindi", "Spanish", "Arabic");
@@ -54,7 +54,7 @@ public class LanguageReportIntegrationTest {
         assertEquals(expected, actual);
     }
 
-    // Every language has more than 0 speakers[cite: 1].
+    // Every language has more than 0 speakers.
     @Test
     void everyLanguageHasSpeakers() {
         for (Language lang : report.getLanguageStatistics()) {
@@ -62,7 +62,7 @@ public class LanguageReportIntegrationTest {
         }
     }
 
-    // The list goes from most to fewest speakers[cite: 1].
+    // The list goes from most to fewest speakers.
     @Test
     void languagesAreSortedMostToFewest() {
         List<Language> languages = report.getLanguageStatistics();
@@ -81,7 +81,7 @@ public class LanguageReportIntegrationTest {
         }
     }
 
-    // Chinese has the most speakers in the world database, so it comes first[cite: 1].
+    // Chinese has the most speakers in the world database, so it comes first.
     @Test
     void chineseIsFirst() {
         assertEquals("Chinese", report.getLanguageStatistics().get(0).getLanguageName());
