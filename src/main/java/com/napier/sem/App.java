@@ -1,5 +1,9 @@
 package com.napier.sem;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 import java.util.List;
 
 /**
@@ -9,20 +13,49 @@ import java.util.List;
 public class App {
 
     public static void main(String[] args) {
-        // N for the "top N" reports. The user can give it as the first argument,
-        // e.g. "java -jar seMethods.jar 10". If nothing is given, 5 is used.
-        int n = readN(args, 5);
-
         // make the object that connects to the database, then connect
         DatabaseConnector con = new DatabaseConnector();
         con.connect();
 
+        // Create a way to read in the user input.txt file, take in the inputs and return all listed
+        // Create a variable called input
+        Properties input = new Properties();
+        // then try to read the file
+        try (InputStream in = App.class.getResourceAsStream("/input.txt")) {
+            // if success then load the file
+            input.load(in);
+        } catch (IOException | NullPointerException e) {
+            // if it fails to load the file, disconnect and stop
+            System.out.println("Couldn't load input.txt");
+            con.disconnect();
+            return;
+        }
+
+        // use input.getProperty to capture n, continent, region, country, and district from input.txt
+        // n is the "top N" number. The user can give it as the first argument,
+        // e.g. "java -jar seMethods.jar 10". If nothing is given, the n in input.txt is used.
+        int n = readN(args, Integer.parseInt(input.getProperty("n", "5")));
+        String continent = input.getProperty("continent");
+        String region = input.getProperty("region");
+        String country = input.getProperty("country");
+        String district = input.getProperty("district");
+
+        // City reports
+        // create the city report object using the database connection
+        CityReport cityReport = new CityReport(con.getConnection());
+
+        // print all the cities in the world, continent, region, country and district
+        cityReport.printCities(cityReport.getAllCitiesInWorld());
+        cityReport.printCities(cityReport.getAllCitiesInContinent(continent));
+        cityReport.printCities(cityReport.getAllCitiesInRegion(region));
+        cityReport.printCities(cityReport.getAllCitiesInCountry(country));
+        cityReport.printCities(cityReport.getAllCitiesInDistrict(district));
+
+        // print the top n cities in the world
+        cityReport.printCities(cityReport.getTopCitiesInWorld(n));
+
         // UC1 - country reports
         showCountryReports(con, n);
-
-        // UC2 - city reports
-        CityReport cityReport = new CityReport(con.getConnection());
-        cityReport.printCities(cityReport.getTopCitiesInWorld(n));
 
         // UC5 - print some population lookups
         showPopulationLookups(con);
@@ -37,6 +70,10 @@ public class App {
         con.disconnect();
     }
 
+
+    // ---------------------------------------------------------------------
+    // UC5 - population lookups
+    // ---------------------------------------------------------------------
     // ===== UC1 - country reports =====
 
     /**
@@ -148,6 +185,9 @@ public class App {
         System.out.println();
         System.out.println("Population breakdown by " + title);
 
+        // the column headings (the numbers say how wide each column is)
+        System.out.printf("%-30s %15s %26s %26s%n",
+                title, "Total", "In cities (%)", "Not in cities (%)");
         // the numbers in here are how wide each column is so it all lines up
         System.out.println(String.format("%-30s %15s %26s %26s",
                 title, "Total", "In cities (%)", "Not in cities (%)"));
