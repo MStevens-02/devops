@@ -54,6 +54,9 @@ public class App {
         // print the top n cities in the world
         cityReport.printCities(cityReport.getTopCitiesInWorld(n));
 
+        // UC3 - capital city reports
+        showCapitalCityReports(con, continent, region, country, n);
+
         // UC1 - country reports
         showCountryReports(con, n);
 
@@ -70,6 +73,47 @@ public class App {
         con.disconnect();
     }
 
+
+    // ===== UC3 - capital city reports =====
+
+    /**
+     * Prints the capital city reports: all of them in the world, a continent, a region
+     * and a country, and the top N in the world, a continent and a country.
+     *
+     * @param con       the database connection
+     * @param continent the continent to report on, e.g. "Asia"
+     * @param region    the region to report on, e.g. "Caribbean"
+     * @param country   the country to report on, e.g. "France"
+     * @param n         how many capital cities to show in the "top N" reports
+     */
+    public static void showCapitalCityReports(DatabaseConnector con, String continent,
+                                              String region, String country, int n) {
+        // make the report object using the database connection
+        CapitalCityReport capitalReport = new CapitalCityReport(con.getConnection());
+
+        // the 4 "all capital cities" reports
+        System.out.println("\nAll capital cities in the world");
+        capitalReport.printCapitalCities(capitalReport.getAllCapitalCitiesInWorld());
+
+        System.out.println("\nAll capital cities in " + continent);
+        capitalReport.printCapitalCities(capitalReport.getAllCapitalCitiesInContinent(continent));
+
+        System.out.println("\nAll capital cities in " + region);
+        capitalReport.printCapitalCities(capitalReport.getAllCapitalCitiesInRegion(region));
+
+        System.out.println("\nAll capital cities in " + country);
+        capitalReport.printCapitalCities(capitalReport.getAllCapitalCitiesInCountry(country));
+
+        // the 3 "top N capital cities" reports
+        System.out.println("\nTop " + n + " capital cities in the world");
+        capitalReport.printCapitalCities(capitalReport.getTopCapitalCitiesInWorld(n));
+
+        System.out.println("\nTop " + n + " capital cities in " + continent);
+        capitalReport.printCapitalCities(capitalReport.getTopCapitalCitiesInContinent(continent, n));
+
+        System.out.println("\nTop " + n + " capital cities in " + country);
+        capitalReport.printCapitalCities(capitalReport.getTopCapitalCitiesInCountry(country, n));
+    }
 
     // ---------------------------------------------------------------------
     // UC5 - population lookups

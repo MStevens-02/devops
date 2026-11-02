@@ -118,10 +118,10 @@ public class CapitalCityReport {
             System.out.println("No capital cities found");
             return;
         }
-        System.out.println(String.format("%-35s %-45s %-25s %-15s",
+        System.out.println(String.format("%-35s %-45s %15s",
                 "Name", "Country", "Population"));
         for (CapitalCity capitalcity : capitalCities) {
-            System.out.println(String.format("%-35s %-45s %-25s %-15s",
+            System.out.println(String.format("%-35s %-45s %,15d",
                     capitalcity.getName(), capitalcity.getCountryName(),
                     capitalcity.getPopulation()));
         }
