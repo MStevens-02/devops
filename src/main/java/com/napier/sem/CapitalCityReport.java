@@ -85,6 +85,10 @@ public class CapitalCityReport {
     // Create a method to run a query and turn each row into a Capital City
     private ArrayList<CapitalCity> runQuery(String sql, Object... params) {
         ArrayList<CapitalCity> capitalCities = new ArrayList<>();
+        // with no database connection there is nothing to ask, so give back the empty list
+        if (con == null) {
+            return capitalCities;
+        }
         try (PreparedStatement stmt = con.prepareStatement(sql)) {
             for (int i = 0; i < params.length; i++) {
                 stmt.setObject(i + 1, params[i]);

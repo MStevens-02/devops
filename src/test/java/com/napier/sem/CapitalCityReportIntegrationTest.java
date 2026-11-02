@@ -2,6 +2,7 @@ package com.napier.sem;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -14,6 +15,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * They check that the capital city reports bring back the right data
  */
 
+// Tagged "integration" so it only runs in the integration job (it needs the database)
+@Tag("integration")
 public class CapitalCityReportIntegrationTest {
 
     // The connection to the database, shared by every test
