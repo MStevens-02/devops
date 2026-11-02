@@ -1,0 +1,154 @@
+package com.napier.sem;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+// Unit tests for the City class
+// These don't need the database, they just check that a City
+// holds onto good data and says no to bad data
+public class CityUnitTest {
+
+    // A normal city (Edinburgh) that gets made fresh before every test
+    private City edinburgh;
+
+    // Makes a brand new city before each test, so one test can't mess up another one
+    @BeforeEach
+    void makeCity() {
+        edinburgh = new City();
+        edinburgh.setId(459);
+        edinburgh.setName("Edinburgh");
+        edinburgh.setCountryCode("GBR");
+        edinburgh.setCountryName("United Kingdom");
+        edinburgh.setDistrict("Scotland");
+        edinburgh.setPopulation(450180);
+    }
+
+    // ===== all fields =====
+
+    // Whatever we put in, we should get back out
+    @Test
+    void keepsAllTheValues() {
+        assertEquals(459, edinburgh.getId());
+        assertEquals("Edinburgh", edinburgh.getName());
+        assertEquals("GBR", edinburgh.getCountryCode());
+        assertEquals("United Kingdom", edinburgh.getCountryName());
+        assertEquals("Scotland", edinburgh.getDistrict());
+        assertEquals(450180, edinburgh.getPopulation());
+    }
+
+    // Spaces around the name, country code, country name and district get chopped off
+    @Test
+    void spacesGetChoppedOff() {
+        City c = new City();
+        c.setName("  Glasgow  ");
+        c.setCountryCode(" GBR ");
+        c.setCountryName(" United Kingdom ");
+        c.setDistrict("  Scotland  ");
+
+        assertEquals("Glasgow", c.getName());
+        assertEquals("GBR", c.getCountryCode());
+        assertEquals("United Kingdom", c.getCountryName());
+        assertEquals("Scotland", c.getDistrict());
+    }
+
+    // ===== id =====
+
+    // The ID has to be above 0, so 0 and minus numbers should throw an error
+    @Test
+    void saysNoToBadIds() {
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setId(0));
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setId(-1));
+    }
+
+    // ===== name =====
+
+    // The name can't be null or just spaces
+    @Test
+    void saysNoToBadNames() {
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setName(null));
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setName("   "));
+    }
+
+    // ===== country code =====
+
+    // The country code can't be null, blank, or anything other than 3 characters
+    @Test
+    void saysNoToBadCountryCodes() {
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setCountryCode(null));
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setCountryCode("  "));
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setCountryCode("GB"));
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setCountryCode("GBRR"));
+    }
+
+    // ===== country name =====
+
+    // The country name can't be null or just spaces
+    @Test
+    void saysNoToBadCountryNames() {
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setCountryName(null));
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setCountryName(""));
+    }
+
+    // ===== district =====
+
+    // A district that's just spaces gets saved as "Unknown" instead of crashing
+    @Test
+    void blankDistrictBecomesUnknown() {
+        edinburgh.setDistrict("   ");
+        assertEquals("Unknown", edinburgh.getDistrict());
+    }
+
+    // A missing district gets saved as "Unknown" too
+    @Test
+    void nullDistrictBecomesUnknown() {
+        edinburgh.setDistrict(null);
+        assertEquals("Unknown", edinburgh.getDistrict());
+    }
+
+    // ===== population =====
+
+    // A population of 0 is allowed
+    @Test
+    void zeroPopulationIsFine() {
+        edinburgh.setPopulation(0);
+        assertEquals(0, edinburgh.getPopulation());
+    }
+
+    // The population can't be below 0
+    @Test
+    void saysNoToMinusPopulation() {
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setPopulation(-1));
+    }
+
+    // ===== bad setters =====
+
+    // If a setter says no, the old value should still be there afterwards
+    // This goes through every setter that can say no
+    @Test
+    void badSetKeepsTheOldValue() {
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setId(0));
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setName(""));
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setCountryCode("XX"));
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setCountryName(" "));
+        assertThrows(IllegalArgumentException.class, () -> edinburgh.setPopulation(-5));
+
+        assertEquals(459, edinburgh.getId());
+        assertEquals("Edinburgh", edinburgh.getName());
+        assertEquals("GBR", edinburgh.getCountryCode());
+        assertEquals("United Kingdom", edinburgh.getCountryName());
+        assertEquals(450180, edinburgh.getPopulation());
+    }
+
+    // ===== printing =====
+
+    // toString should have the city's name and population in it
+    @Test
+    void toStringHasTheDetails() {
+        String text = edinburgh.toString();
+
+        assertTrue(text.contains("Edinburgh"));
+        assertTrue(text.contains("450180"));
+    }
+}
