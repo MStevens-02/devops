@@ -29,6 +29,7 @@ public class LanguageReportUnitTest {
         assertTrue(result.isEmpty(), "Result list should be empty when connection is null.");
     }
 
+
     /**
      * Verifies that displayLanguageReport() handles a null database connection
      * gracefully without crashing the application (e.g., preventing NullPointerException).
