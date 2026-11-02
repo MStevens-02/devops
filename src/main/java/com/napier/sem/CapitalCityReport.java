@@ -10,14 +10,16 @@ import java.util.ArrayList;
 public class CapitalCityReport {
     private final Connection con;
 
-    // Create a base query that joins capital city and country to get country name
+    // Create a base query to get the capital cities.
+    // There is no capital city table in the database. Each country stores the ID of its
+    // capital city in country.Capital, so we join country to city using that ID.
     private static final String BASE_QUERY =
-            "SELECT capitalcity.ID, capitalcity.Name, capitalcity.CountryCode, country.Name AS CountryName, "
-                    + "capitalcity.Population "
-                    + "FROM capitalcity JOIN country ON capitalcity.CountryCode = country.Code ";
+            "SELECT city.ID, city.Name, city.CountryCode, country.Name AS CountryName, "
+                    + "city.Population "
+                    + "FROM country JOIN city ON country.Capital = city.ID ";
 
     // Create an order by so every report goes from largest to smallest population
-    private static final String ORDER_BY = "ORDER BY capitalcity.Population DESC ";
+    private static final String ORDER_BY = "ORDER BY city.Population DESC ";
 
     // Create a filter for each of the three scopes
     private static final String CONTINENT_FILTER = "WHERE country.Continent = ? ";
