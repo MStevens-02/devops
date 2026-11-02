@@ -182,4 +182,16 @@ public class CityReportCheckTest {
         // step 2: check there are 4 lines (1 heading + 3 cities)
         assertEquals(4, lines.length);
     }
+
+    // ===== no database =====
+
+    // With no database every report gives back an empty list (not null, and no crash).
+    @Test
+    void noConnectionGivesEmptyLists() {
+        // step 1: ask for a few reports with no database connection
+        // step 2: check each one gives back an empty list
+        assertTrue(report.getAllCitiesInWorld().isEmpty());
+        assertTrue(report.getAllCitiesInCountry("France").isEmpty());
+        assertTrue(report.getTopCitiesInWorld(5).isEmpty());
+    }
 }
