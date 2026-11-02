@@ -50,13 +50,7 @@ public class DatabaseConnector {
         for (int i = 0; i < RETRIES; ++i) {
             System.out.println("Connecting to database...");
             try {
-                // Wait a bit for db to start
-                Thread.sleep(delay);
                 // Connect to database
-                con = DriverManager.getConnection(
-                        "jdbc:mysql://" + location + "/world?allowPublicKeyRetrieval=true&useSSL=false",
-                        "root", "livelongandprosper"
-                );
                 con = DriverManager.getConnection(
                         "jdbc:mysql://" + location
                                 + "/world?allowPublicKeyRetrieval=true&useSSL=false",
