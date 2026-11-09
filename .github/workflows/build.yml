@@ -67,3 +67,16 @@ jobs:
         run: mvn clean package -DskipTests
       - name: Run docker compose
         run: docker compose up --build --abort-on-container-exit
+      - name: Deploy to GitHub Releases
+        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}${{ github.ref == 'refs/heads/release' && '-rc' || '' }}
+          name: v${{ steps.version.outputs.version }}${{ github.ref == 'refs/heads/release' && ' (release candidate)' || '' }}
+          target_commitish: ${{ github.sha }}
+          prerelease: ${{ github.ref == 'refs/heads/release' }}
+          generate_release_notes: true
+          files: ./target/*-jar-with-dependencies.jar
+      - name: Push master onto release branch
+        if: github.ref == 'refs/heads/master'
+        run: git push origin HEAD:refs/heads/release
