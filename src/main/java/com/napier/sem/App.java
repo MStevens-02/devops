@@ -45,14 +45,18 @@ public class App {
         CityReport cityReport = new CityReport(con.getConnection());
 
         // print all the cities in the world, continent, region, country and district
-        cityReport.printCities(cityReport.getAllCitiesInWorld());
-        cityReport.printCities(cityReport.getAllCitiesInContinent(continent));
-        cityReport.printCities(cityReport.getAllCitiesInRegion(region));
-        cityReport.printCities(cityReport.getAllCitiesInCountry(country));
-        cityReport.printCities(cityReport.getAllCitiesInDistrict(district));
+        cityReport.printCities("All cities in the world", cityReport.getAllCitiesInWorld());
+        cityReport.printCities("All cities in " + continent, cityReport.getAllCitiesInContinent(continent));
+        cityReport.printCities("All cities in " + region, cityReport.getAllCitiesInRegion(region));
+        cityReport.printCities("All cities in " + country, cityReport.getAllCitiesInCountry(country));
+        cityReport.printCities("All cities in " + district, cityReport.getAllCitiesInDistrict(district));
 
         // print the top n cities in the world
-        cityReport.printCities(cityReport.getTopCitiesInWorld(n));
+        cityReport.printCities("Top " + n + " cities in the world", cityReport.getTopCitiesInWorld(n));
+        cityReport.printCities("Top " + n + " cities in Asia", cityReport.getTopCitiesInContinent("Asia", n));
+        cityReport.printCities("Top " + n + " cities in the Caribbean", cityReport.getTopCitiesInRegion("Caribbean", n));
+        cityReport.printCities("Top " + n + " cities in France", cityReport.getTopCitiesInCountry("France", n));
+        cityReport.printCities("Top " + n + " cities in Scotland", cityReport.getTopCitiesInDistrict("Scotland", n));
 
         // UC3 - capital city reports
         showCapitalCityReports(con, continent, region, country, n);
@@ -110,6 +114,9 @@ public class App {
 
         System.out.println("\nTop " + n + " capital cities in " + continent);
         capitalReport.printCapitalCities(capitalReport.getTopCapitalCitiesInContinent(continent, n));
+
+        System.out.println("\nTop " + n + " capital cities in " + region);
+        capitalReport.printCapitalCities(capitalReport.getTopCapitalCitiesInRegion(region, n));
 
         System.out.println("\nTop " + n + " capital cities in " + country);
         capitalReport.printCapitalCities(capitalReport.getTopCapitalCitiesInCountry(country, n));
