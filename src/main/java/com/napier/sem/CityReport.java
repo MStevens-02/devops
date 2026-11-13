@@ -144,6 +144,7 @@ public class CityReport {
         printCities(cities);
     }
 
+
     // Create a method to print the city report columns
     public void printCities(ArrayList<City> cities) {
         if (cities == null || cities.isEmpty()) {
