@@ -136,6 +136,15 @@ public class CityReport {
         return cities;
     }
 
+
+    // Prints a title first, then the cities, so every city report is labelled
+    public void printCities(String title, ArrayList<City> cities) {
+        System.out.println();
+        System.out.println(title);
+        printCities(cities);
+    }
+
+
     // Create a method to print the city report columns
     public void printCities(ArrayList<City> cities) {
         if (cities == null || cities.isEmpty()) {
