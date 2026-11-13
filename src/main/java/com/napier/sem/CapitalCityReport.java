@@ -63,6 +63,15 @@ public class CapitalCityReport {
         return runQuery(BASE_QUERY + CONTINENT_FILTER + ORDER_BY + "LIMIT ?", continent, n);
     }
 
+
+    // Create a method to return the top N capital cities in a region
+    public ArrayList<CapitalCity> getTopCapitalCitiesInRegion(String region, int n) {
+        checkLocation(region);
+        checkN(n);
+        return runQuery(BASE_QUERY + REGION_FILTER + ORDER_BY + "LIMIT ?", region, n);
+    }
+
+
     // Create a method to return the top N capital cities in a country
     public ArrayList<CapitalCity> getTopCapitalCitiesInCountry(String country, int n) {
         checkLocation(country);
