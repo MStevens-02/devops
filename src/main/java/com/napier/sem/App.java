@@ -53,6 +53,10 @@ public class App {
 
         // print the top n cities in the world
         cityReport.printCities("Top " + n + " cities in the world", cityReport.getTopCitiesInWorld(n));
+        cityReport.printCities("Top " + n + " cities in Asia", cityReport.getTopCitiesInContinent("Asia", n));
+        cityReport.printCities("Top " + n + " cities in the Caribbean", cityReport.getTopCitiesInRegion("Caribbean", n));
+        cityReport.printCities("Top " + n + " cities in France", cityReport.getTopCitiesInCountry("France", n));
+        cityReport.printCities("Top " + n + " cities in Scotland", cityReport.getTopCitiesInDistrict("Scotland", n));
 
         // UC3 - capital city reports
         showCapitalCityReports(con, continent, region, country, n);
@@ -110,6 +114,9 @@ public class App {
 
         System.out.println("\nTop " + n + " capital cities in " + continent);
         capitalReport.printCapitalCities(capitalReport.getTopCapitalCitiesInContinent(continent, n));
+
+        System.out.println("\nTop " + n + " capital cities in " + region);
+        capitalReport.printCapitalCities(capitalReport.getTopCapitalCitiesInRegion(region, n));
 
         System.out.println("\nTop " + n + " capital cities in " + country);
         capitalReport.printCapitalCities(capitalReport.getTopCapitalCitiesInCountry(country, n));
