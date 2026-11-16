@@ -63,6 +63,9 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+      - name: Get version from pom.xml
+        id: version
+        run: echo "version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> "$GITHUB_OUTPUT"
       - name: Build with Maven
         run: mvn clean package -DskipTests
       - name: Run docker compose
