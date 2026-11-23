@@ -24,7 +24,7 @@ The diagram below shows the six use cases (UC1–UC6), grouped by report type. F
 
 ## Report Results
  
-The application produces all 32 reports requested in the brief. N defaults to 5 and can be passed as the first argument (e.g. `java -jar seMethods.jar 10`). The continent, region, country and district are set in [`src/main/resources/input.txt`](src/main/resources/input.txt).
+The application produces all 32 reports requested in the brief. N defaults to 5 and can be passed as the first argument (e.g. `java -jar seMethods.jar 10`). Example places are set in [`input.txt`](src/main/resources/input.txt) and [`App.java`](src/main/java/com/napier/sem/App.java).
  
 Screenshots are taken from the program running in Docker against the `world` database. Reports that return a long list (for example all 4,079 cities in the world) show the start of the output.
 
