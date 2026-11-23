@@ -239,9 +239,6 @@ public class App {
         // the column headings (the numbers say how wide each column is)
         System.out.printf("%-30s %15s %26s %26s%n",
                 title, "Total", "In cities (%)", "Not in cities (%)");
-        // the numbers in here are how wide each column is so it all lines up
-        System.out.println(String.format("%-30s %15s %26s %26s",
-                title, "Total", "In cities (%)", "Not in cities (%)"));
 
         if (rows.isEmpty()) {
             System.out.println("No data found");
