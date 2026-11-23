@@ -64,10 +64,11 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'maven'
       - name: Get version from pom.xml
         id: version
         run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          VERSION=$(sed -n '0,/<version>/s/.*<version>\(.*\)<\/version>.*/\1/p' pom.xml)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v0.1-alpha-${VERSION##*.}${{ github.ref == 'refs/heads/release' && '-rc' || '' }}" >> "$GITHUB_OUTPUT"
       - name: Build with Maven
