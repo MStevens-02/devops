@@ -204,3 +204,12 @@ Chinese, English, Hindi, Spanish and Arabic, from most to fewest speakers, with 
 2. Build the project using Maven: `mvn clean package`
 3. Build the Docker image: `docker build -t devopsimage .`
 4. Run the Docker container linked to the database.
+
+## Reporting a bug
+
+1. Go to **Issues → New issue** and choose the **Bug report** template.
+2. Fill in the steps to reproduce, what you expected, what actually happened, and add a screenshot if you can.
+3. The issue gets the `bug` label and is added to the project board.
+4. The fix is made on its own branch and merged through a pull request that says `Fixes #<issue number>`, which closes the bug automatically.
+
+Examples: [#256 City reports have no title](https://github.com/MStevens-02/devops/issues/256), [#262 printCapitalCities crashes with a null capital](https://github.com/MStevens-02/devops/issues/262).
