@@ -14,6 +14,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'maven'
       - name: Unit Tests
         run: mvn test
       - name: CodeCov
@@ -36,6 +37,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'maven'
       - name: Integration Tests
         run: |
           docker build -t database ./db
