@@ -109,6 +109,25 @@ public class CapitalCityReportIntegrationTest {
         assertThrows(IllegalArgumentException.class, () -> report.getAllCapitalCitiesInCountry(null));
     }
 
+    // Asking for the top 3 capital cities in the Caribbean gives back exactly 3, biggest first
+    @Test
+    void topCapitalCitiesInRegionGivesBackN() {
+        List<CapitalCity> capitals = report.getTopCapitalCitiesInRegion("Caribbean", 3);
+
+        assertEquals(3, capitals.size());
+        for (int i = 0; i < capitals.size() - 1; i++) {
+            assertTrue(capitals.get(i).getPopulation() >= capitals.get(i + 1).getPopulation());
+        }
+    }
+
+    // A minus number for N is rejected in the region report too
+    @Test
+    void topCapitalCitiesInRegionSaysNoToNegativeN() {
+        assertThrows(IllegalArgumentException.class, () ->
+                report.getTopCapitalCitiesInRegion("Caribbean", -1));
+    }
+
+
     // Asking for a negative number of capital cities should be rejected
     @Test
     void saysNoToNegativeN() {
