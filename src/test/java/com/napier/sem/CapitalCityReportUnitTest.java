@@ -27,4 +27,28 @@ public class CapitalCityReportUnitTest {
         assertNotNull(result, "Result list should not be null even if connection is null.");
         assertTrue(result.isEmpty(), "Result list should be empty when connection is null.");
     }
+
+    // Test that printCapitalCities can handle a list with a null capital city in it
+    @Test
+    public void printCapitalCitiesTest(){
+        // Create a capital city report with no database connection, because printing doesn't need one
+        CapitalCityReport report = new CapitalCityReport(null);
+
+        // Create an empty list to hold the capital cities
+        ArrayList<CapitalCity> CapitalCities = new ArrayList<>();
+
+        // Create a capital city and only give it a name
+        CapitalCity london = new CapitalCity();
+        london.setName("London");
+
+        // Add London to the list
+        CapitalCities.add(london);
+
+        // Add a null to the list to check a missing capital city doesn't break the report
+        CapitalCities.add(null);
+
+        // Print the list, which should not crash
+        report.printCapitalCities(CapitalCities);
+
+    }
 }
