@@ -201,9 +201,9 @@ Chinese, English, Hindi, Spanish and Arabic, from most to fewest speakers, with 
 
 ## How to Run the Project
 1. Clone the repository: `git clone https://github.com/MStevens-02/devops.git`
-2. Build the project using Maven: `mvn clean package`
-3. Build the Docker image: `docker build -t devopsimage .`
-4. Run the Docker container linked to the database.
+2. Build the JAR: `mvn clean package -DskipTests`
+3. Start the database and app: `docker compose up --build`
+4. To view the full output afterwards: `docker compose logs --no-log-prefix app`
 
 ## Reporting a bug
 
