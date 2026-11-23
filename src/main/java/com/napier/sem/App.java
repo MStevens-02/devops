@@ -95,7 +95,7 @@ public class App {
         // make the report object using the database connection
         CapitalCityReport capitalReport = new CapitalCityReport(con.getConnection());
 
-        // the 4 "all capital cities" reports
+        // the 3 "all capital cities" reports
         System.out.println("\nAll capital cities in the world");
         capitalReport.printCapitalCities(capitalReport.getAllCapitalCitiesInWorld());
 
@@ -105,8 +105,6 @@ public class App {
         System.out.println("\nAll capital cities in " + region);
         capitalReport.printCapitalCities(capitalReport.getAllCapitalCitiesInRegion(region));
 
-        System.out.println("\nAll capital cities in " + country);
-        capitalReport.printCapitalCities(capitalReport.getAllCapitalCitiesInCountry(country));
 
         // the 3 "top N capital cities" reports
         System.out.println("\nTop " + n + " capital cities in the world");
@@ -118,8 +116,6 @@ public class App {
         System.out.println("\nTop " + n + " capital cities in " + region);
         capitalReport.printCapitalCities(capitalReport.getTopCapitalCitiesInRegion(region, n));
 
-        System.out.println("\nTop " + n + " capital cities in " + country);
-        capitalReport.printCapitalCities(capitalReport.getTopCapitalCitiesInCountry(country, n));
     }
 
     // ---------------------------------------------------------------------
@@ -239,9 +235,6 @@ public class App {
         // the column headings (the numbers say how wide each column is)
         System.out.printf("%-30s %15s %26s %26s%n",
                 title, "Total", "In cities (%)", "Not in cities (%)");
-        // the numbers in here are how wide each column is so it all lines up
-        System.out.println(String.format("%-30s %15s %26s %26s",
-                title, "Total", "In cities (%)", "Not in cities (%)"));
 
         if (rows.isEmpty()) {
             System.out.println("No data found");

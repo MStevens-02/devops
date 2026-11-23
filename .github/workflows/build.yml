@@ -54,10 +54,13 @@ jobs:
 
   build:
     name: Building our Application
+    needs: [UnitTests, IntegrationTests]
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
@@ -82,7 +85,8 @@ jobs:
           target_commitish: ${{ github.sha }}
           prerelease: ${{ github.ref == 'refs/heads/release' }}
           generate_release_notes: true
-          files: ./target/*-jar-with-dependencies.jar
+          files: ./target/seMethods.jar
+          fail_on_unmatched_files: true
       - name: Push master onto release branch
         if: github.ref == 'refs/heads/master'
         run: git push origin HEAD:refs/heads/release
