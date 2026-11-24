@@ -236,4 +236,20 @@ public class PopulationBreakdownTest {
         assertTrue(line.contains(String.format("%,d", 3705025700L)));
         assertTrue(line.contains(String.format("%,d", 697604103L)));
     }
+
+    /**
+     * A long country name should fit inside the name column,
+     * so the numbers after it still line up.
+     */
+    @Test
+    void longNameFitsInNameColumn() {
+        // a short name and the longest country name in the database (44 characters)
+        PopulationBreakdown shortName = new PopulationBreakdown("Chad", 1000, 250);
+        PopulationBreakdown longName = new PopulationBreakdown(
+                "South Georgia and the South Sandwich Islands", 1000, 250);
+
+        // if the name column is wide enough, both rows are the same length,
+        // so every column after the name starts in the same place
+        assertEquals(shortName.toString().length(), longName.toString().length());
+    }
 }
