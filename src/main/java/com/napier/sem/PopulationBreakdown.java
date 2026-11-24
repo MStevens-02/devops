@@ -148,14 +148,14 @@ public class PopulationBreakdown {
 
     /**
      * Makes the line of text that gets printed in the report.
-     * The numbers in the format (like 30 and 15) are how wide each column is,
+     * The numbers in the format (like 45 and 15) are how wide each column is,
      * so everything lines up nicely. %% just prints a % sign.
      *
      * @return one line of the report
      */
     @Override
     public String toString() {
-        String line = String.format("%-30s %,15d %,15d (%6.2f%%) %,15d (%6.2f%%)",
+        String line = String.format("%-45s %,15d %,15d (%6.2f%%) %,15d (%6.2f%%)",
                 name,
                 totalPopulation,
                 cityPopulation, getCityPercentage(),

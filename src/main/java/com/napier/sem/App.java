@@ -233,7 +233,7 @@ public class App {
         System.out.println("Population breakdown by " + title);
 
         // the column headings (the numbers say how wide each column is)
-        System.out.printf("%-30s %15s %26s %26s%n",
+        System.out.printf("%-45s %15s %26s %26s%n",
                 title, "Total", "In cities (%)", "Not in cities (%)");
 
         if (rows.isEmpty()) {
