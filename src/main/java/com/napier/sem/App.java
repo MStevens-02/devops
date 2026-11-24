@@ -34,7 +34,18 @@ public class App {
         // use input.getProperty to capture n, continent, region, country, and district from input.txt
         // n is the "top N" number. The user can give it as the first argument,
         // e.g. "java -jar seMethods.jar 10". If nothing is given, the n in input.txt is used.
-        int n = readN(args, Integer.parseInt(input.getProperty("n", "5")));
+        // read n from input.txt, and fall back to 5 if it isn't a whole number above 0
+        int fileN = 5;
+        try {
+            fileN = Integer.parseInt(input.getProperty("n", "5").trim());
+            if (fileN < 1) {
+                System.out.println("n in input.txt must be 1 or more. Using 5 instead.");
+                fileN = 5;
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("n in input.txt must be a whole number. Using 5 instead.");
+        }
+        int n = readN(args, fileN);
         String continent = input.getProperty("continent");
         String region = input.getProperty("region");
         String country = input.getProperty("country");
