@@ -130,6 +130,11 @@ public class CapitalCityReport {
         System.out.println(String.format("%-35s %-45s %15s",
                 "Name", "Country", "Population"));
         for (CapitalCity capitalcity : capitalCities) {
+            // added an if statement to check if capital city contains a null value
+            if (capitalcity == null){
+                // skip the current loop and jump to the next item
+                continue;
+            }
             System.out.println(String.format("%-35s %-45s %,15d",
                     capitalcity.getName(), capitalcity.getCountryName(),
                     capitalcity.getPopulation()));
