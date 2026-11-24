@@ -34,8 +34,8 @@ public class LanguageReport {
 
         // Print report headers with fixed column spacing
         System.out.println("\nWorld Language Population Report");
-        System.out.printf("%-20s %-20s %-25s\n", "Language", "Total Speakers", "World Population (%)");
-        System.out.println("----------------------------------------------------------------------------------");
+        System.out.printf("%-20s %20s %24s%n", "Language", "Total Speakers", "World Population (%)");
+        System.out.println("-".repeat(66));
 
         // Guard against empty data or missing results
         if (languages == null || languages.isEmpty()) {
